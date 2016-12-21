@@ -6,14 +6,8 @@ this repo is sample codes of [Unity 2 Advent Calendar 2016](http://qiita.com/adv
 Day 23.
 
 ## samples
-* 複数の素材のセッティングを一括変更する例
-* auto-gen TOC:
-{:toc}
-* auto-gen TOC:
-{:toc2}
+- [複数の素材のセッティングを一括変更する例](##複数の素材のセッティングを一括変更する例)
 
 ## 複数の素材のセッティングを一括変更する例
-- [ ] これgithubで動くの？
+- [ ] これgithubで動く、知らんかった。
 
-## toc
-## toc2
