@@ -1,5 +1,5 @@
 {
-	"lastModified":"12/21/2016 18:19:51",
+	"lastModified":"12/21/2016 18:41:06",
 	"nodes":[
 		{
 			"name":"Loader0",
@@ -15,15 +15,92 @@
 				}
 			],
 			"pos":{
-				"x":135,
-				"y":160
+				"x":38,
+				"y":46
 			},
 			"loadPath":{
-				"Unknown":""
+				"Unknown":"Game/Images/PNG_iOS",
+				"Android":"Game/Images/PNG_Android"
+			}
+		},
+		{
+			"name":"ImportSetting0",
+			"id":"0196f10b-b8c8-40ed-9414-1d71b198de57",
+			"kind":"IMPORTSETTING_GUI",
+			"inputPoints":[
+				{
+					"id":"4a6e7260-3827-4d09-af35-d448612dda9a",
+					"label":"-"
+				}
+			],
+			"outputPoints":[
+				{
+					"id":"66d0f4c3-59e6-4307-a893-0e1914cf14f0",
+					"label":"+"
+				}
+			],
+			"pos":{
+				"x":213,
+				"y":106
+			}
+		},
+		{
+			"name":"PrefabBuilder0",
+			"id":"d77e6989-2d92-499c-8d9a-159b8611231b",
+			"kind":"PREFABBUILDER_GUI",
+			"inputPoints":[
+				{
+					"id":"5d2f9df3-f547-4a3b-b628-8a669e0bf006",
+					"label":"-"
+				}
+			],
+			"outputPoints":[
+				{
+					"id":"c10a5b23-f565-403e-85fa-8d1bf687d2db",
+					"label":"+"
+				}
+			],
+			"pos":{
+				"x":472,
+				"y":165
+			},
+			"scriptClassName":"MyPrefabBuilder",
+			"scriptInstanceData":{
+				"Unknown":"{
+					\"color\":{
+						\"r\":0.0,
+						\"g\":0.0,
+						\"b\":0.0,
+						\"a\":0.0
+					}
+				}",
+				"Android":"{
+					\"color\":{
+						\"r\":0.0,
+						\"g\":0.0,
+						\"b\":0.671999990940094,
+						\"a\":0.0
+					}
+				}"
 			}
 		}
 	],
 	"connections":[
-		
+		{
+			"id":"00f49b66-1930-4cfb-96bb-b5f0ee59def5",
+			"label":"+",
+			"fromNode":"a045d69c-aa47-400e-b4e6-ce83a1899274",
+			"fromNodeConPointId":"eaad6c0f-5c8f-480c-a6b0-eab73dfbde31",
+			"toNode":"0196f10b-b8c8-40ed-9414-1d71b198de57",
+			"toNodeConPointId":"4a6e7260-3827-4d09-af35-d448612dda9a"
+		},
+		{
+			"id":"915878c3-ff38-4e80-9798-eb9c39bc25a5",
+			"label":"+",
+			"fromNode":"0196f10b-b8c8-40ed-9414-1d71b198de57",
+			"fromNodeConPointId":"66d0f4c3-59e6-4307-a893-0e1914cf14f0",
+			"toNode":"d77e6989-2d92-499c-8d9a-159b8611231b",
+			"toNodeConPointId":"5d2f9df3-f547-4a3b-b628-8a669e0bf006"
+		}
 	]
 }
