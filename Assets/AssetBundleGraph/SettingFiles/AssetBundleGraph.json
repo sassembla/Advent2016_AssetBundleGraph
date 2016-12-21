@@ -1,9 +1,100 @@
 {
-	"lastModified":"12/21/2016 16:26:15",
+	"lastModified":"12/21/2016 18:03:46",
 	"nodes":[
-		
+		{
+			"name":"Loader0",
+			"id":"5e46cc59-dfee-49b1-8972-7e2e204c355c",
+			"kind":"LOADER_GUI",
+			"inputPoints":[
+				
+			],
+			"outputPoints":[
+				{
+					"id":"1a2a44aa-a24b-4812-a4fc-fe90c3df4030",
+					"label":"+"
+				}
+			],
+			"pos":{
+				"x":27,
+				"y":64
+			},
+			"loadPath":{
+				"Unknown":"Game/Images"
+			}
+		},
+		{
+			"name":"Grouping0",
+			"id":"139eac6f-ef77-4ce7-b40f-1668d12d17c6",
+			"kind":"GROUPING_GUI",
+			"inputPoints":[
+				{
+					"id":"c2f46dc3-db5d-4b32-be7b-d26305b31441",
+					"label":"-"
+				}
+			],
+			"outputPoints":[
+				{
+					"id":"ab600122-6d3c-4d5b-aa26-c857e891d35f",
+					"label":"+"
+				}
+			],
+			"pos":{
+				"x":234,
+				"y":65
+			},
+			"groupingKeyword":{
+				"Unknown":"chara_*/"
+			}
+		},
+		{
+			"name":"PrefabBuilder0",
+			"id":"8d4e4acc-d8ef-41ff-954a-84f225ce06cc",
+			"kind":"PREFABBUILDER_GUI",
+			"inputPoints":[
+				{
+					"id":"674bebd6-ac08-4829-9eb6-9df27cf881ba",
+					"label":"-"
+				}
+			],
+			"outputPoints":[
+				{
+					"id":"6e4f44da-f82f-47dc-b0e9-6e8abcb9263a",
+					"label":"+"
+				}
+			],
+			"pos":{
+				"x":436,
+				"y":65
+			},
+			"scriptClassName":"MyPrefabBuilder",
+			"scriptInstanceData":{
+				"Unknown":"{
+					\n\t\t\t\t\t\n\t\t\t\t\t\"color\":{
+						\n\t\t\t\t\t\t\n\t\t\t\t\t\t\"r\":0.0,
+						\n\t\t\t\t\t\t\n\t\t\t\t\t\t\"g\":0.0,
+						\n\t\t\t\t\t\t\n\t\t\t\t\t\t\"b\":0.0,
+						\n\t\t\t\t\t\t\n\t\t\t\t\t\t\"a\":0.0\n\t\t\t\t\t\n\t\t\t\t\t
+					}\n\t\t\t\t\n\t\t\t\t
+				}"
+			}
+		}
 	],
 	"connections":[
-		
+		{
+			"id":"6bab7afe-8fff-47f3-aaa4-5b163771bd98",
+			"label":"+",
+			"fromNode":"139eac6f-ef77-4ce7-b40f-1668d12d17c6",
+			"fromNodeConPointId":"ab600122-6d3c-4d5b-aa26-c857e891d35f",
+			"toNode":"8d4e4acc-d8ef-41ff-954a-84f225ce06cc",
+			"toNodeConPointId":"674bebd6-ac08-4829-9eb6-9df27cf881ba"
+		},
+		{
+			"id":"af50fe19-c10a-4b7a-b4c0-f755b78121f7",
+			"label":"+",
+			"fromNode":"5e46cc59-dfee-49b1-8972-7e2e204c355c",
+			"fromNodeConPointId":"1a2a44aa-a24b-4812-a4fc-fe90c3df4030",
+			"toNode":"139eac6f-ef77-4ce7-b40f-1668d12d17c6",
+			"toNodeConPointId":"c2f46dc3-db5d-4b32-be7b-d26305b31441"
+		}
 	]
 }

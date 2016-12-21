@@ -2,3 +2,15 @@
 Temp/*
 
 Library/*
+
+Assembly-CSharp.csproj
+
+.vscode/launch.json
+
+Advent2016_AssetBundleGraph.sln
+
+Assembly-CSharp-Editor.csproj
+
+Assets/VSCode/*
+
+Assets/VSCode.meta
