@@ -39,10 +39,10 @@ Day 23.
 
 
 # license
-codes:  
+AssetBundleGraph: MIT  
+[https://bitbucket.org/Unity-Technologies/assetbundlegraphtool/overview](https://bitbucket.org/Unity-Technologies/assetbundlegraphtool/overview)
 
+All Unity-chan resources: © Unity Technologies Japan/UCL
+[http://unity-chan.com](http://unity-chan.com)
 
-All Unity-chan resources are:  
-downloaded http://unity-chan.com  
-
-© Unity Technologies Japan/UCL
+other codes: MIT
