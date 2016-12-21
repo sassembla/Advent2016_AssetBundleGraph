@@ -22,10 +22,10 @@ Day 23.
 
 
 ## 複数の素材のセッティングを一括変更する
-- [ ] Done
+- [x] Done
 
 ## 複数の素材からプレファブを作る
-- [ ] Done
+- [x] Done
 
 ## プラットフォーム指定してコマンドラインから起動
 - [ ] Done
@@ -35,4 +35,14 @@ Day 23.
 - [ ] Done
 
 ## プラットフォームごとに異なる素材やimportSettingsを指定する
-- [ ] Done
+- [x] Done
+
+
+# license
+codes:  
+
+
+All Unity-chan resources are:  
+downloaded http://unity-chan.com  
+
+© Unity Technologies Japan/UCL
