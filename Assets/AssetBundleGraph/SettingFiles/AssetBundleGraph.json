@@ -1,9 +1,57 @@
 {
-	"lastModified":"12/21/2016 16:26:15",
+	"lastModified":"12/21/2016 17:02:14",
 	"nodes":[
-		
+		{
+			"name":"Loader0",
+			"id":"5e46cc59-dfee-49b1-8972-7e2e204c355c",
+			"kind":"LOADER_GUI",
+			"inputPoints":[
+				
+			],
+			"outputPoints":[
+				{
+					"id":"1a2a44aa-a24b-4812-a4fc-fe90c3df4030",
+					"label":"+"
+				}
+			],
+			"pos":{
+				"x":27,
+				"y":64
+			},
+			"loadPath":{
+				"Unknown":"Game/Images"
+			}
+		},
+		{
+			"name":"ImportSetting0",
+			"id":"e07b4d8c-c430-473b-b3c0-7918793790a0",
+			"kind":"IMPORTSETTING_GUI",
+			"inputPoints":[
+				{
+					"id":"38f09e1d-7024-4ae5-915e-86551bd34d6e",
+					"label":"-"
+				}
+			],
+			"outputPoints":[
+				{
+					"id":"4f9208c0-8b2f-40a5-8325-e426f17fe535",
+					"label":"+"
+				}
+			],
+			"pos":{
+				"x":252,
+				"y":111
+			}
+		}
 	],
 	"connections":[
-		
+		{
+			"id":"eb72c3b2-e67d-4a0f-b1d7-7d6492051c29",
+			"label":"+",
+			"fromNode":"5e46cc59-dfee-49b1-8972-7e2e204c355c",
+			"fromNodeConPointId":"1a2a44aa-a24b-4812-a4fc-fe90c3df4030",
+			"toNode":"e07b4d8c-c430-473b-b3c0-7918793790a0",
+			"toNodeConPointId":"38f09e1d-7024-4ae5-915e-86551bd34d6e"
+		}
 	]
 }
