@@ -1,7 +1,27 @@
 {
-	"lastModified":"12/21/2016 16:26:15",
+	"lastModified":"12/21/2016 18:19:51",
 	"nodes":[
-		
+		{
+			"name":"Loader0",
+			"id":"a045d69c-aa47-400e-b4e6-ce83a1899274",
+			"kind":"LOADER_GUI",
+			"inputPoints":[
+				
+			],
+			"outputPoints":[
+				{
+					"id":"eaad6c0f-5c8f-480c-a6b0-eab73dfbde31",
+					"label":"+"
+				}
+			],
+			"pos":{
+				"x":135,
+				"y":160
+			},
+			"loadPath":{
+				"Unknown":""
+			}
+		}
 	],
 	"connections":[
 		
