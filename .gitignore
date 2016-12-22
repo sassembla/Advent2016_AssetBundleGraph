@@ -5,8 +5,6 @@ Library/*
 
 Assets/AssetBundleGraph/Cache/AssetBundles/*
 
-Export/*
-
 abbuild.log
 
 Assembly-CSharp-Editor.csproj
