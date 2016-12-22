@@ -1,5 +1,5 @@
 {
-	"lastModified":"12/22/2016 16:42:51",
+	"lastModified":"12/22/2016 17:35:06",
 	"nodes":[
 		{
 			"name":"Loader0",
@@ -33,6 +33,10 @@
 				},
 				{
 					"id":"d5377681-0a50-447f-86b9-710bc9e61186",
+					"label":"jp"
+				},
+				{
+					"id":"e47b0294-7284-4f3c-9986-a53cd95a5faa",
 					"label":"en"
 				}
 			],
@@ -43,8 +47,8 @@
 				}
 			],
 			"pos":{
-				"x":518,
-				"y":91
+				"x":493,
+				"y":29
 			},
 			"bundleNameTemplate":{
 				"Unknown":"bundle_*"
@@ -52,8 +56,12 @@
 			"useGroupAsVariants":false,
 			"variants":[
 				{
-					"name":"en",
+					"name":"jp",
 					"pointId":"d5377681-0a50-447f-86b9-710bc9e61186"
+				},
+				{
+					"name":"en",
+					"pointId":"e47b0294-7284-4f3c-9986-a53cd95a5faa"
 				}
 			]
 		},
@@ -74,8 +82,8 @@
 				}
 			],
 			"pos":{
-				"x":519,
-				"y":249
+				"x":521,
+				"y":217
 			},
 			"enabledBundleOptions":{
 				"Unknown":0
@@ -102,8 +110,8 @@
 				}
 			],
 			"pos":{
-				"x":35,
-				"y":77
+				"x":16,
+				"y":74
 			},
 			"filter":[
 				{
@@ -135,8 +143,8 @@
 				}
 			],
 			"pos":{
-				"x":339,
-				"y":107
+				"x":307,
+				"y":119
 			},
 			"groupingKeyword":{
 				"Unknown":"/chara_*/"
@@ -159,76 +167,39 @@
 				}
 			],
 			"pos":{
-				"x":342,
-				"y":47
+				"x":306,
+				"y":54
 			},
 			"groupingKeyword":{
 				"Unknown":"/chara_*/"
 			}
 		},
 		{
-			"name":"PrefabBuilder0",
-			"id":"e80b3069-016f-49f1-a5cb-4648029538b7",
-			"kind":"PREFABBUILDER_GUI",
+			"name":"Exporter0",
+			"id":"9e0c42fd-7093-417d-8fd1-9f1b9965a027",
+			"kind":"EXPORTER_GUI",
 			"inputPoints":[
 				{
-					"id":"078597be-e762-4572-801d-58c2a1db824b",
+					"id":"f9aa3eda-f6dd-495e-a7da-f5acc269b1d2",
 					"label":"-"
 				}
 			],
 			"outputPoints":[
-				{
-					"id":"51e2b8d2-786e-4606-ac97-69d9010849d3",
-					"label":"+"
-				}
+				
 			],
 			"pos":{
-				"x":518,
-				"y":14
+				"x":594,
+				"y":301
 			},
-			"scriptClassName":"MyPrefabBuilder",
-			"scriptInstanceData":{
-				"Unknown":"{
-					\"color\":{
-						\"r\":0.0,
-						\"g\":0.0,
-						\"b\":0.0,
-						\"a\":0.0
-					}
-				}"
+			"exportTo":{
+				"Unknown":"Export"
+			},
+			"exportOption":{
+				"Unknown":0
 			}
-		},
-		{
-			"name":"Filter1",
-			"id":"29f67d7c-b470-42bb-86a6-b6297bd59786",
-			"kind":"FILTER_GUI",
-			"inputPoints":[
-				{
-					"id":"ad9584b3-0d58-4007-b944-f11e44287f6c",
-					"label":"-"
-				}
-			],
-			"outputPoints":[
-				
-			],
-			"pos":{
-				"x":345,
-				"y":315
-			},
-			"filter":[
-				
-			]
 		}
 	],
 	"connections":[
-		{
-			"id":"b6f56cdf-17a5-4167-8acd-9e833b9b66c9",
-			"label":"+",
-			"fromNode":"9671dd05-1b15-4a50-9e8a-5b53cc3aeef7",
-			"fromNodeConPointId":"e3ec9f99-1c14-4e57-864e-6bd20587b4a9",
-			"toNode":"d3d5e40c-44c9-4a9a-9a68-f4ef78c90d7c",
-			"toNodeConPointId":"223d0b38-c6d4-4b76-b4ef-b2f1508656c2"
-		},
 		{
 			"id":"77ca50c3-c246-4586-ad14-aa84c45eba0e",
 			"label":"+",
@@ -254,28 +225,36 @@
 			"toNodeConPointId":"63202a41-265f-4974-8c56-d8c81aa499fe"
 		},
 		{
-			"id":"2149f6ae-cf65-43b5-9790-df47925cbc9e",
+			"id":"7cb3438e-dc9b-4503-80b1-a84375bbb79e",
 			"label":"+",
 			"fromNode":"ec7845b8-cf3c-4887-9a23-af39d82a7c15",
 			"fromNodeConPointId":"2493edaf-7dae-420a-a53b-183c6ae0973f",
 			"toNode":"41d97bf9-5b00-42ba-bec6-94d733c28f9c",
-			"toNodeConPointId":"d5377681-0a50-447f-86b9-710bc9e61186"
+			"toNodeConPointId":"e47b0294-7284-4f3c-9986-a53cd95a5faa"
 		},
 		{
-			"id":"25b6e7d4-38a6-47bd-8922-807607af3376",
+			"id":"8cb43758-aabb-4a78-8737-e00782615368",
+			"label":"+",
+			"fromNode":"0d62632e-91de-4911-aa38-a1f601afeb5a",
+			"fromNodeConPointId":"6afa6576-0362-4cf5-89fb-61b980532c8f",
+			"toNode":"9e0c42fd-7093-417d-8fd1-9f1b9965a027",
+			"toNodeConPointId":"f9aa3eda-f6dd-495e-a7da-f5acc269b1d2"
+		},
+		{
+			"id":"c93e7c67-572f-4983-9feb-fd6df0091414",
 			"label":"+",
 			"fromNode":"52ad4e91-cc18-4f35-9759-32f04f061e78",
 			"fromNodeConPointId":"6e8b319c-8a3a-4ca3-b7d0-12913ccaa47b",
-			"toNode":"e80b3069-016f-49f1-a5cb-4648029538b7",
-			"toNodeConPointId":"078597be-e762-4572-801d-58c2a1db824b"
+			"toNode":"41d97bf9-5b00-42ba-bec6-94d733c28f9c",
+			"toNodeConPointId":"d5377681-0a50-447f-86b9-710bc9e61186"
 		},
 		{
-			"id":"8d4cb21c-259c-4dd2-b70c-639d2b835a3a",
+			"id":"e59c5703-5894-4b5c-9db6-1be45f560ddb",
 			"label":"+",
-			"fromNode":"e80b3069-016f-49f1-a5cb-4648029538b7",
-			"fromNodeConPointId":"51e2b8d2-786e-4606-ac97-69d9010849d3",
-			"toNode":"29f67d7c-b470-42bb-86a6-b6297bd59786",
-			"toNodeConPointId":"ad9584b3-0d58-4007-b944-f11e44287f6c"
+			"fromNode":"9671dd05-1b15-4a50-9e8a-5b53cc3aeef7",
+			"fromNodeConPointId":"e3ec9f99-1c14-4e57-864e-6bd20587b4a9",
+			"toNode":"d3d5e40c-44c9-4a9a-9a68-f4ef78c90d7c",
+			"toNodeConPointId":"223d0b38-c6d4-4b76-b4ef-b2f1508656c2"
 		}
 	]
 }

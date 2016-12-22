@@ -18,9 +18,8 @@ public class MyPrefabBuilder : IPrefabBuilder {
 		 */
 	public string CanCreatePrefab (string groupKey, List<UnityEngine.Object> objects) {
 
-		if(objects.Count == 1) {
-			Debug.Log("ho");
-			return string.Format("MyPrefab{0}", groupKey);
+		if(objects.Count == 1) {			
+			return string.Format("chara_{0}", groupKey);
 		}
 
 		return null;
@@ -31,14 +30,13 @@ public class MyPrefabBuilder : IPrefabBuilder {
 	 */ 
 	public UnityEngine.GameObject CreatePrefab (string groupKey, List<UnityEngine.Object> objects) {
 
-		GameObject go = new GameObject(string.Format("MyPrefab{0}", groupKey));
+		GameObject go = new GameObject(string.Format("chara_{0}", groupKey));
 
 		GUITexture t = go.AddComponent<GUITexture>();
 
-		Texture2D tex = (Texture2D)objects.Find(o => o.GetType() == typeof(UnityEngine.Texture2D));
+		Texture2D tex = objects[0] as Texture2D;
 
 		t.texture = tex;
-		t.color = color;
 
 		return go;
 	}
