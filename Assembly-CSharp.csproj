@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.20506</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <RootNamespace></RootNamespace>
+    <ProjectGuid>{C4CC36E6-C105-E080-8E7F-5EBAE4D343F6}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <AssemblyName>Assembly-CSharp</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <BaseDirectory>Assets</BaseDirectory>
+	<LangVersion>default</LangVersion>
+</PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>Temp\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;UNITY_5_3_OR_NEWER;UNITY_5_4_OR_NEWER;UNITY_5_5_OR_NEWER;UNITY_5_5_0;UNITY_5_5;UNITY_5;ENABLE_AUDIO;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_DUCK_TYPING;ENABLE_GENERICS;ENABLE_MICROPHONE;ENABLE_MULTIPLE_DISPLAYS;ENABLE_PHYSICS;ENABLE_SPRITERENDERER_FLIPPING;ENABLE_SPRITES;ENABLE_TERRAIN;ENABLE_RAKNET;ENABLE_UNET;ENABLE_LZMA;ENABLE_UNITYEVENTS;ENABLE_WEBCAM;ENABLE_WWW;ENABLE_CLOUD_SERVICES_COLLAB;ENABLE_CLOUD_SERVICES_ADS;ENABLE_CLOUD_HUB;ENABLE_CLOUD_PROJECT_ID;ENABLE_CLOUD_SERVICES_UNET;ENABLE_CLOUD_SERVICES_BUILD;ENABLE_CLOUD_LICENSE;ENABLE_EDITOR_METRICS;ENABLE_EDITOR_METRICS_CACHING;INCLUDE_DYNAMIC_GI;INCLUDE_GI;ENABLE_MONO_BLEEDING_EDGE_STANDALONE;ENABLE_MONO_BLEEDING_EDGE_EDITOR;ENABLE_MONO_SGEN;PLATFORM_SUPPORTS_MONO;RENDER_SOFTWARE_CURSOR;INCLUDE_PUBNUB;ENABLE_PLAYMODE_TESTS_RUNNER;ENABLE_SCRIPTING_NEW_CSHARP_COMPILER;UNITY_STANDALONE_OSX;UNITY_STANDALONE;ENABLE_SUBSTANCE;ENABLE_GAMECENTER;ENABLE_RUNTIME_GI;ENABLE_MOVIES;ENABLE_NETWORK;ENABLE_CRUNCH_TEXTURE_COMPRESSION;ENABLE_UNITYWEBREQUEST;ENABLE_CLOUD_SERVICES;ENABLE_CLOUD_SERVICES_ANALYTICS;ENABLE_CLOUD_SERVICES_PURCHASING;ENABLE_CLOUD_SERVICES_CRASH_REPORTING;ENABLE_VIDEO;ENABLE_VR;ENABLE_CLUSTERINPUT;ENABLE_WEBSOCKET_HOST;ENABLE_MONO;ENABLE_PROFILER;UNITY_ASSERTIONS;UNITY_EDITOR;UNITY_EDITOR_64;UNITY_EDITOR_OSX;UNITY_TEAM_LICENSE;UNITY_PRO_LICENSE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>0169</NoWarn>
+	<LangVersion>default</LangVersion>
+</PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>Temp\bin\Release\</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>0169</NoWarn>
+	<LangVersion>default</LangVersion>
+</PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.XML" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="UnityEngine">
+      <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/Managed/UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEditor">
+      <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/Managed/UnityEditor.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+     <Compile Include="Assets\SlackAPI\SlackAPI.Console\Program.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI.Console\Properties\AssemblyInfo.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Attachment.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Bot.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Channel.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\ContextMessage.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Conversation.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\DirectMessageConversation.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Extensions.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\File.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\JavascriptBotsToArray.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\JavascriptDateTimeConverter.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Message.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\MimeTypes.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\OwnedStampedMessage.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Preferences.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Properties\AssemblyInfo.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\AccessTokenResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\AuthSigninResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\AuthStartResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\AuthTestResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\ChannelCreateResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\ChannelListResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\ChannelMessageHistory.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\ChannelSetTopicResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\DeletedResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\DirectMessageConversationListResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\FileInfoResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\FileListResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\FileUploadResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\FindTeamResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupArchiveResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupCloseResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupCreateChildResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupCreateResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupInviteResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupKickResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupLeaveResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupListResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupMarkResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupMessageHistory.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupOpenResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupRenameResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupSetPurposeResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupSetTopicResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\GroupUnarchiveResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\JoinDirectMessageChannelResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\LoginResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\MarkResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\MessageHistory.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\PostMessageResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\PresenseResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\SearchResponseAll.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\SearchResponseFiles.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\SearchResponseMessages.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\StarListResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\UpdateResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\UserCountsResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\UserGetPresenceResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\UserInfoResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\UserListResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RPCMessages\UserPreferencesResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Reaction.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\ReactionAddedResponse.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Request.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\RequestStateForTask.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Response.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\SlackClient.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\SlackScope.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\SlackSocket.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\SlackSocketClient.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\SlackTaskClient.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Team.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\TeamPreferences.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\User.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\UserProfile.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\UserTeamCombo.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Utilities\ILockFree.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\Utilities\LockFreeQueue.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\ChannelArchive.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\ChannelCreated.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\ChannelDeleted.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\ChannelMarked.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\ChannelRename.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\ChannelUnarchive.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\DeletedMessage.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\FileShareMessage.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\GroupArchive.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\GroupClose.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\GroupJoined.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\GroupLeft.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\GroupOpen.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\GroupRename.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\GroupUnarchive.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\Hello.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\MessageReceived.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\NewMessage.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\Ping.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\Pong.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\PresenceChange.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\ReactionAdded.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\TeamJoin.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\Typing.cs" />
+     <Compile Include="Assets\SlackAPI\SlackAPI\WebSocketMessages\UserChange.cs" />
+     <None Include="Assets\Game\Images\derivedfrom.txt" />
+ <Reference Include="UnityEngine.Advertisements">
+ <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/UnityExtensions/Unity/Advertisements/UnityEngine.Advertisements.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.UI">
+ <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.Networking">
+ <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.PlaymodeTestsRunner">
+ <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/UnityExtensions/Unity/PlaymodeTestsRunner/UnityEngine.PlaymodeTestsRunner.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.Analytics">
+ <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.HoloLens">
+ <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/UnityExtensions/Unity/UnityHoloLens/RuntimeEditor/UnityEngine.HoloLens.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.Purchasing">
+ <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/UnityExtensions/Unity/UnityPurchasing/UnityEngine.Purchasing.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.VR">
+ <HintPath>/Applications/Untiy5.5b9cs6/Unity.app/Contents/UnityExtensions/Unity/UnityVR/RuntimeEditor/UnityEngine.VR.dll</HintPath>
+ </Reference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

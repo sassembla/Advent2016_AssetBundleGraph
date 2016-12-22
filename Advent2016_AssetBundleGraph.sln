@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{5E01A7A8-B1F7-8DE3-906B-A10F68A6EAC2}") = "Advent2016_AssetBundleGraph", "Assembly-CSharp-Editor.csproj", "{A01FDA56-3389-2F57-E2B1-EF2BECF45021}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A01FDA56-3389-2F57-E2B1-EF2BECF45021}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A01FDA56-3389-2F57-E2B1-EF2BECF45021}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A01FDA56-3389-2F57-E2B1-EF2BECF45021}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A01FDA56-3389-2F57-E2B1-EF2BECF45021}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Assembly-CSharp.csproj
+	EndGlobalSection
+EndGlobal
