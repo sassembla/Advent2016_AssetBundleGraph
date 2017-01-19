@@ -11,16 +11,12 @@ namespace AssetBundleGraph {
 
 		public void Setup (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
-			var incomingAssets = inputGroupAssets.SelectMany(v => v.Value).ToList();
-
-			ValidateModifier(node, target, incomingAssets,
-				(Type expectedType, Type foundType, Asset foundAsset) => {
+			ValidateModifier(node, target, incoming,
+				(Type expectedType, Type foundType, AssetReference foundAsset) => {
 					throw new NodeException(string.Format("{3} :Modifier expect {0}, but different type of incoming asset is found({1} {2})", 
 						expectedType.FullName, foundType.FullName, foundAsset.fileNameAndExtension, node.Name), node.Id);
 				},
@@ -30,63 +26,98 @@ namespace AssetBundleGraph {
 				() => {
 					throw new NodeException(node.Name + " :Failed to create Modifier from settings. Please fix settings from Inspector.", node.Id);
 				},
-				(Type expected, Type incoming) => {
+				(Type expectedType, Type incomingType) => {
 					throw new NodeException(string.Format("{0} :Incoming asset type is does not match with this Modifier (Expected type:{1}, Incoming type:{2}).",
-						node.Name, (expected != null)?expected.FullName:"null", (incoming != null)?incoming.FullName:"null"), node.Id);
+						node.Name, (expectedType != null)?expectedType.FullName:"null", (incomingType != null)?incomingType.FullName:"null"), node.Id);
 				}
 			);
 
-			// Modifier does not add, filter or change structure of group, so just pass given group of assets
-			Output(connectionToOutput, inputGroupAssets, null);
+
+			if(incoming != null && Output != null) {
+				// Modifier does not add, filter or change structure of group, so just pass given group of assets
+				var dst = (connectionsToOutput == null || !connectionsToOutput.Any())? 
+					null : connectionsToOutput.First();
+
+				foreach(var ag in incoming) {
+					Output(dst, ag.assetGroups);
+				}
+			}
 		}
 
 		
 		public void Run (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output,
+			Action<NodeData, string, float> progressFunc) 
 		{
-			var incomingAssets = inputGroupAssets.SelectMany(v => v.Value).ToList();
-
+			if(incoming == null) {
+				return;
+			}
 			var modifier = ModifierUtility.CreateModifier(node, target);
 			UnityEngine.Assertions.Assert.IsNotNull(modifier);
 			bool isAnyAssetModified = false;
 
-			foreach(var asset in incomingAssets) {
-				var loadedAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(asset.importFrom);
-				if(modifier.IsModified(loadedAsset)) {
-					modifier.Modify(loadedAsset);
-					isAnyAssetModified = true;
+			foreach(var ag in incoming) {
+				foreach(var assets in ag.assetGroups.Values) {
+					foreach(var asset in assets) {
+						if(modifier.IsModified(asset.allData)) {
+							modifier.Modify(asset.allData);
+							asset.SetDirty();
+							isAnyAssetModified = true;
+						}
+					}
 				}
 			}
 
 			if(isAnyAssetModified) {
 				// apply asset setting changes to AssetDatabase.
+				AssetDatabase.SaveAssets();
 				AssetDatabase.Refresh();
 			}
 
-			// Modifier does not add, filter or change structure of group, so just pass given group of assets
-			Output(connectionToOutput, inputGroupAssets, null);
+			foreach(var ag in incoming) {
+				foreach(var assets in ag.assetGroups.Values) {
+					foreach(var asset in assets) {
+						asset.ReleaseData();
+					}
+				}
+			}
+
+			if(incoming != null && Output != null) {
+				// Modifier does not add, filter or change structure of group, so just pass given group of assets
+				var dst = (connectionsToOutput == null || !connectionsToOutput.Any())? 
+					null : connectionsToOutput.First();
+
+				foreach(var ag in incoming) {
+					Output(dst, ag.assetGroups);
+				}
+			}
 		}
 			
 		public static void ValidateModifier (
 			NodeData node,
 			BuildTarget target,
-			List<Asset> incomingAssets,
-			Action<Type, Type, Asset> multipleAssetTypeFound,
+			IEnumerable<PerformGraph.AssetGroups> incoming,
+			Action<Type, Type, AssetReference> multipleAssetTypeFound,
 			Action noModiferData,
 			Action failedToCreateModifier,
 			Action<Type, Type> incomingTypeMismatch
 		) {
-			Type expectedType = TypeUtility.FindIncomingAssetType(incomingAssets);
-			if(expectedType != null) {
-				foreach(var a  in incomingAssets) {
-					Type assetType = TypeUtility.FindTypeOfAsset(a.importFrom);
-					if(assetType != expectedType) {
-						multipleAssetTypeFound(expectedType, assetType, a);
+			Type expectedType = null;
+			if(incoming != null) {
+				expectedType = TypeUtility.FindFirstIncomingAssetType(incoming);
+				if(expectedType != null) {
+					foreach(var ag in incoming) {
+						foreach(var assets in ag.assetGroups.Values) {
+							foreach(var a in assets) {
+								Type assetType = a.filterType;
+								if(assetType != expectedType) {
+									multipleAssetTypeFound(expectedType, assetType, a);
+								}
+							}
+						}
 					}
 				}
 			}
@@ -103,7 +134,8 @@ namespace AssetBundleGraph {
 
 			// if there is no incoming assets, there is no way to check if 
 			// right type of asset is coming in - so we'll just skip the test
-			if(incomingAssets.Any()) {
+			// expectedType is not null when there is at least one incoming asset
+			if(incoming != null && expectedType != null) {
 				var targetType = ModifierUtility.GetModifierTargetType(modifier);
 				if( targetType != expectedType ) {
 					incomingTypeMismatch(targetType, expectedType);
