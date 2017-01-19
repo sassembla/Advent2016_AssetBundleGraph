@@ -8,13 +8,11 @@ using System.Collections.Generic;
 
 namespace AssetBundleGraph {
 	public class IntegratedGUIExporter : INodeOperation {
-		public void Setup (BuildTarget target,
-			NodeData node,
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput,
-			Dictionary<string, List<Asset>> inputGroupAssets,
-			List<string> alreadyCached,
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output)
+		public void Setup (BuildTarget target, 
+			NodeData node, 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
 			ValidateExportPath(
 				node.ExporterExportPath[target],
@@ -28,75 +26,68 @@ namespace AssetBundleGraph {
 					}
 				}
 			);
-
-			Export(target, node, inputPoint, connectionToOutput, inputGroupAssets, Output, false);
+		}
+		
+		public void Run (BuildTarget target, 
+			NodeData node, 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output,
+			Action<NodeData, string, float> progressFunc) 
+		{
+			Export(target, node, incoming, connectionsToOutput, progressFunc);
 		}
 
-		public void Run (BuildTarget target,
-			NodeData node,
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput,
-			Dictionary<string, List<Asset>> inputGroupAssets,
-			List<string> alreadyCached,
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output)
+		private void Export (BuildTarget target, 
+			NodeData node, 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			Action<NodeData, string, float> progressFunc) 
 		{
-			Export(target, node, inputPoint, connectionToOutput, inputGroupAssets, Output, true);
-		}
-
-		private void Export (BuildTarget target,
-			NodeData node,
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput,
-			Dictionary<string, List<Asset>> inputGroupAssets,
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output,
-			bool isRun)
-		{
-			var outputDict = new Dictionary<string, List<Asset>>();
-			outputDict["0"] = new List<Asset>();
+			if(incoming == null) {
+				return;
+			}
 
 			var exportPath = FileUtility.GetPathWithProjectPath(node.ExporterExportPath[target]);
 
-			if (isRun) {
-				if(node.ExporterExportOption[target] == (int)ExporterExportOption.DeleteAndRecreateExportDirectory) {
-					if (Directory.Exists(exportPath)) {
-						Directory.Delete(exportPath, true);
-					}
-				}
-
-				if(node.ExporterExportOption[target] != (int)ExporterExportOption.ErrorIfNoExportDirectoryFound) {
-					if (!Directory.Exists(exportPath)) {
-						Directory.CreateDirectory(exportPath);
-					}
+			if(node.ExporterExportOption[target] == (int)ExporterExportOption.DeleteAndRecreateExportDirectory) {
+				if (Directory.Exists(exportPath)) {
+					Directory.Delete(exportPath, true);
 				}
 			}
 
-			var failedExports = new List<string>();
+			if(node.ExporterExportOption[target] != (int)ExporterExportOption.ErrorIfNoExportDirectoryFound) {
+				if (!Directory.Exists(exportPath)) {
+					Directory.CreateDirectory(exportPath);
+				}
+			}
 
-			foreach (var groupKey in inputGroupAssets.Keys) {
-				var exportedAssets = new List<Asset>();
-				var inputSources = inputGroupAssets[groupKey];
+			var report = new ExportReport(node);
 
-				foreach (var source in inputSources) {
-					var destinationSourcePath = source.importFrom;
+			foreach(var ag in incoming) {
+				foreach (var groupKey in ag.assetGroups.Keys) {
+					var inputSources = ag.assetGroups[groupKey];
 
-					// in bundleBulider, use platform-package folder for export destination.
-					if (destinationSourcePath.StartsWith(AssetBundleGraphSettings.BUNDLEBUILDER_CACHE_PLACE)) {
-						var depth = AssetBundleGraphSettings.BUNDLEBUILDER_CACHE_PLACE.Split(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR).Length + 1;
+					foreach (var source in inputSources) {					
+						var destinationSourcePath = source.importFrom;
 
-						var splitted = destinationSourcePath.Split(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR);
-						var reducedArray = new string[splitted.Length - depth];
+						// in bundleBulider, use platform-package folder for export destination.
+						if (destinationSourcePath.StartsWith(AssetBundleGraphSettings.BUNDLEBUILDER_CACHE_PLACE)) {
+							var depth = AssetBundleGraphSettings.BUNDLEBUILDER_CACHE_PLACE.Split(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR).Length + 1;
 
-						Array.Copy(splitted, depth, reducedArray, 0, reducedArray.Length);
-						var fromDepthToEnd = string.Join(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR.ToString(), reducedArray);
+							var splitted = destinationSourcePath.Split(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR);
+							var reducedArray = new string[splitted.Length - depth];
 
-						destinationSourcePath = fromDepthToEnd;
-					}
+							Array.Copy(splitted, depth, reducedArray, 0, reducedArray.Length);
+							var fromDepthToEnd = string.Join(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR.ToString(), reducedArray);
 
-					var destination = FileUtility.PathCombine(exportPath, destinationSourcePath);
+							destinationSourcePath = fromDepthToEnd;
+						}
 
-					var parentDir = Directory.GetParent(destination).ToString();
+						var destination = FileUtility.PathCombine(exportPath, destinationSourcePath);
 
-					if (isRun) {
+						var parentDir = Directory.GetParent(destination).ToString();
+
 						if (!Directory.Exists(parentDir)) {
 							Directory.CreateDirectory(parentDir);
 						}
@@ -104,28 +95,23 @@ namespace AssetBundleGraph {
 							File.Delete(destination);
 						}
 						if (string.IsNullOrEmpty(source.importFrom)) {
-							failedExports.Add(source.absoluteAssetPath);
+							report.AddErrorEntry(source.absolutePath, destination, "Source Asset import path is empty; given asset is not imported by Unity.");
 							continue;
 						}
 						try {
+							if(progressFunc != null) progressFunc(node, string.Format("Copying {0}", source.fileNameAndExtension), 0.5f);
 							File.Copy(source.importFrom, destination);
+							report.AddExportedEntry(source.importFrom, destination);
 						} catch(Exception e) {
-							failedExports.Add(source.importFrom);
-							Debug.LogError(node.Name + ": Error occured: " + e.Message);
+							report.AddErrorEntry(source.importFrom, destination, e.Message);
 						}
+
+						source.exportTo = destination;
 					}
-
-					var exportedAsset = Asset.CreateAssetWithExportPath(destination);
-					exportedAssets.Add(exportedAsset);
 				}
-				outputDict["0"].AddRange(exportedAssets);
 			}
 
-			if (failedExports.Any()) {
-				Debug.LogError(node.Name + ": Failed to export files. All files must be imported before exporting: " + string.Join(", ", failedExports.ToArray()));
-			}
-
-			Output(connectionToOutput, outputDict, null);
+			AssetBundleBuildReport.AddExportReport(report);
 		}
 
 		public static bool ValidateExportPath (string currentExportFilePath, string combinedPath, Action NullOrEmpty, Action DoesNotExist) {

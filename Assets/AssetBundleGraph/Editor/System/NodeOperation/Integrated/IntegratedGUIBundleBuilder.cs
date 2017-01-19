@@ -14,28 +14,30 @@ namespace AssetBundleGraph {
 
 		public void Setup (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
+			// BundleBuilder do nothing without incoming connections
+			if(incoming == null) {
+				return;
+			}
 
-			var outputDict = new Dictionary<string, List<Asset>>();
-			outputDict[key] = new List<Asset>();
-
-			var bundleNames = inputGroupAssets.Keys.ToList();
-
+			var bundleNames = incoming.SelectMany(v => v.assetGroups.Keys).Distinct().ToList();
 			var bundleVariants = new Dictionary<string, List<string>>();
 
 			// get all variant name for bundles
-			foreach (var name in bundleNames) {
-				bundleVariants[name] = new List<string>();
-				var assets = inputGroupAssets[name];
-				foreach(var a in assets) {
-					var variantName = a.variantName;
-					if(!bundleVariants[name].Contains(variantName)) {
-						bundleVariants[name].Add(variantName);
+			foreach(var ag in incoming) {
+				foreach(var name in ag.assetGroups.Keys) {
+					if(!bundleVariants.ContainsKey(name)) {
+						bundleVariants[name] = new List<string>();
+					}
+					var assets = ag.assetGroups[name];
+					foreach(var a in assets) {
+						var variantName = a.variantName;
+						if(!bundleVariants[name].Contains(variantName)) {
+							bundleVariants[name].Add(variantName);
+						}
 					}
 				}
 			}
@@ -45,39 +47,67 @@ namespace AssetBundleGraph {
 			bundleNames.Add( manifestName );
 			bundleVariants[manifestName] = new List<string>() {""};
 
-			var bundleOutputDir = FileUtility.EnsureAssetBundleCacheDirExists(target, node);
+			if(connectionsToOutput != null && Output != null) {
+				UnityEngine.Assertions.Assert.IsTrue(connectionsToOutput.Any());
 
-			foreach (var name in bundleNames) {
-				foreach(var v in bundleVariants[name]) {
-					string bundleName = (string.IsNullOrEmpty(v))? name : name + "." + v;
-					Asset bundle = Asset.CreateAssetWithImportPath( FileUtility.PathCombine(bundleOutputDir, bundleName) );
-					Asset manifest = Asset.CreateAssetWithImportPath( FileUtility.PathCombine(bundleOutputDir, bundleName + AssetBundleGraphSettings.MANIFEST_FOOTER) );
-					outputDict[key].Add(bundle);
-					outputDict[key].Add(manifest);
+				var outputDict = new Dictionary<string, List<AssetReference>>();
+				outputDict[key] = new List<AssetReference>();
+				var bundleOutputDir = FileUtility.EnsureAssetBundleCacheDirExists(target, node);
+
+				foreach (var name in bundleNames) {
+					foreach(var v in bundleVariants[name]) {
+						string bundleName = (string.IsNullOrEmpty(v))? name : name + "." + v;
+						AssetReference bundle = AssetReferenceDatabase.GetAssetBundleReference( FileUtility.PathCombine(bundleOutputDir, bundleName) );
+						AssetReference manifest = AssetReferenceDatabase.GetAssetBundleReference( FileUtility.PathCombine(bundleOutputDir, bundleName + AssetBundleGraphSettings.MANIFEST_FOOTER) );
+						outputDict[key].Add(bundle);
+						outputDict[key].Add(manifest);
+					}
 				}
-			}
 
-			Output(connectionToOutput, outputDict, new List<string>());
+				var dst = (connectionsToOutput == null || !connectionsToOutput.Any())? 
+					null : connectionsToOutput.First();
+				Output(dst, outputDict);
+			}
 		}
 		
 		public void Run (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output,
+			Action<NodeData, string, float> progressFunc) 
 		{
-			
+			if(incoming == null) {
+				return;
+			}
+
+			var aggregatedGroups = new Dictionary<string, List<AssetReference>>();
+			aggregatedGroups[key] = new List<AssetReference>();
+
+			if(progressFunc != null) progressFunc(node, "Collecting all inputs...", 0f);
+
+			foreach(var ag in incoming) {
+				foreach(var name in ag.assetGroups.Keys) {
+					if(!aggregatedGroups.ContainsKey(name)) {
+						aggregatedGroups[name] = new List<AssetReference>();
+					}
+					aggregatedGroups[name].AddRange(ag.assetGroups[name].AsEnumerable());
+				}
+			}
+
 			var bundleOutputDir = FileUtility.EnsureAssetBundleCacheDirExists(target, node);
 
-			var bundleNames = inputGroupAssets.Keys.ToList();
+			var bundleNames = aggregatedGroups.Keys.ToList();
 			var bundleVariants = new Dictionary<string, List<string>>();
 
+			if(progressFunc != null) progressFunc(node, "Building bundle variants map...", 0.2f);
+
 			// get all variant name for bundles
-			foreach (var name in bundleNames) {
-				bundleVariants[name] = new List<string>();
-				var assets = inputGroupAssets[name];
+			foreach(var name in aggregatedGroups.Keys) {
+				if(!bundleVariants.ContainsKey(name)) {
+					bundleVariants[name] = new List<string>();
+				}
+				var assets = aggregatedGroups[name];
 				foreach(var a in assets) {
 					var variantName = a.variantName;
 					if(!bundleVariants[name].Contains(variantName)) {
@@ -88,7 +118,7 @@ namespace AssetBundleGraph {
 
 			int validNames = 0;
 			foreach (var name in bundleNames) {
-				var assets = inputGroupAssets[name];
+				var assets = aggregatedGroups[name];
 				// we do not build bundle without any asset
 				if( assets.Count > 0 ) {
 					validNames += bundleVariants[name].Count;
@@ -100,59 +130,62 @@ namespace AssetBundleGraph {
 			int bbIndex = 0;
 			foreach(var name in bundleNames) {
 				foreach(var v in bundleVariants[name]) {
-					var bundleName = name;
-					var assets = inputGroupAssets[name];
+					var assets = aggregatedGroups[name];
 
 					if(assets.Count <= 0) {
 						continue;
 					}
 
-					bundleBuild[bbIndex].assetBundleName = bundleName;
+					bundleBuild[bbIndex].assetBundleName = name;
 					bundleBuild[bbIndex].assetBundleVariant = v;
 					bundleBuild[bbIndex].assetNames = assets.Where(x => x.variantName == v).Select(x => x.importFrom).ToArray();
 					++bbIndex;
 				}
 			}
 
+			if(progressFunc != null) progressFunc(node, "Building Asset Bundles...", 0.7f);
 
-			BuildPipeline.BuildAssetBundles(bundleOutputDir, bundleBuild, (BuildAssetBundleOptions)node.BundleBuilderBundleOptions[target], target);
+			AssetBundleManifest m = BuildPipeline.BuildAssetBundles(bundleOutputDir, bundleBuild, (BuildAssetBundleOptions)node.BundleBuilderBundleOptions[target], target);
 
-
-			var output = new Dictionary<string, List<Asset>>();
-			output[key] = new List<Asset>();
+			var output = new Dictionary<string, List<AssetReference>>();
+			output[key] = new List<AssetReference>();
 
 			var generatedFiles = FileUtility.GetAllFilePathsInFolder(bundleOutputDir);
 			// add manifest file
-			bundleNames.Add( BuildTargetUtility.TargetToAssetBundlePlatformName(target) );
+			bundleVariants.Add( BuildTargetUtility.TargetToAssetBundlePlatformName(target).ToLower(), new List<string> { null } );
 			foreach (var path in generatedFiles) {
-				var fileName = Path.GetFileName(path);
-				if( IsFileIntendedItem(fileName, bundleNames) ) {
-					output[key].Add( Asset.CreateAssetWithImportPath(path) );
-				} else {
-					Debug.LogWarning(node.Name + ":Irrelevant file found in assetbundle cache folder:" + fileName);
+				var fileName = path.Substring(bundleOutputDir.Length+1);
+				if( IsFileIntendedItem(fileName, bundleVariants) ) {
+					output[key].Add( AssetReferenceDatabase.GetAssetBundleReference(path) );
 				}
 			}
 
-			Output(connectionToOutput, output, alreadyCached);
+			if(Output != null) {
+				var dst = (connectionsToOutput == null || !connectionsToOutput.Any())? 
+					null : connectionsToOutput.First();
+				Output(dst, output);
+			}
+
+			AssetBundleBuildReport.AddBuildReport(new AssetBundleBuildReport(node, m, bundleBuild, output[key], aggregatedGroups, bundleVariants));
 		}
 
 		// Check if given file is generated Item
-		private bool IsFileIntendedItem(string filename, List<string> bundleNames) {
+		private bool IsFileIntendedItem(string filename, Dictionary<string, List<string>> bundleVariants) {
 			filename = filename.ToLower();
-			foreach(var name in bundleNames) {
-				var compName = name.ToLower();
-				// bundle identifier may have "/"
-				if(compName.IndexOf(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR) != -1) {
-					var items = compName.Split(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR);
-					compName  = items[items.Length-1];
-				}
-				// related files always start from bundle names, as variants and manifests
-				// are only appended on treail
-				if( filename.IndexOf(compName.ToLower()) == 0 ) {
-					return true;
-				}
+
+			int lastDotManifestIndex = filename.LastIndexOf(".manifest");
+			filename = (lastDotManifestIndex > 0)? filename.Substring(0, lastDotManifestIndex) : filename;
+
+			int lastDotIndex = filename.LastIndexOf('.');
+			var bundleNameFromFile  = (lastDotIndex > 0) ? filename.Substring(0, lastDotIndex): filename;
+			var variantNameFromFile = (lastDotIndex > 0) ? filename.Substring(lastDotIndex+1): null;
+
+			if(!bundleVariants.ContainsKey(bundleNameFromFile)) {
+				return false;
 			}
-			return false;
+
+			var variants = bundleVariants[bundleNameFromFile];
+			return variants.Contains(variantNameFromFile);
 		}
 	}
 }
