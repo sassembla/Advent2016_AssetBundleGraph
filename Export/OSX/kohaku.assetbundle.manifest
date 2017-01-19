@@ -1,0 +1,21 @@
+ManifestFileVersion: 0
+CRC: 3032295562
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: df9e3977a01c7473261ad225842094d3
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c1642440719609290a7e09a50a7286f4
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- Assets/Game/Images/PNG/portrait_kohaku_02.png
+- Assets/Game/Images/PNG/portrait_kohaku_05.png
+- Assets/Game/Images/PNG/portrait_kohaku_06.png
+- Assets/Game/Images/PNG/portrait_kohaku_03.png
+- Assets/Game/Images/PNG/portrait_kohaku_01.png
+- Assets/Game/Images/PNG/portrait_kohaku_04.png
+Dependencies: []

@@ -1,0 +1,21 @@
+ManifestFileVersion: 0
+CRC: 221808261
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: a19d9d3751139377fcbfc568996c9d7d
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c1642440719609290a7e09a50a7286f4
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- Assets/Game/Images/PNG/portrait_yuko_02.png
+- Assets/Game/Images/PNG/portrait_yuko_05.png
+- Assets/Game/Images/PNG/portrait_yuko_04.png
+- Assets/Game/Images/PNG/portrait_yuko_01.png
+- Assets/Game/Images/PNG/portrait_yuko_06.png
+- Assets/Game/Images/PNG/portrait_yuko_03.png
+Dependencies: []

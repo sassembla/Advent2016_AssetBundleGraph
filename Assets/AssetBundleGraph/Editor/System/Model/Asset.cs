@@ -3,37 +3,95 @@ using UnityEditor;
 
 using System;
 using System.IO;
+using System.Security.Cryptography;
+
 
 namespace AssetBundleGraph {
-	public class Asset {
-		public readonly Guid guid;
-		public readonly string assetDatabaseId;
-		public readonly string absoluteAssetPath;
-//		public readonly string sourceBasePath;
-//		public readonly string pathUnderSourceBase;
-		public readonly string importFrom;
-		public readonly string exportTo;
-		public readonly Type assetType;
-		public readonly bool isNew;		
-		public readonly bool isBundled;
-		public readonly string variantName;
+	[System.Serializable]
+	public class AssetReference {
+
+		[SerializeField] private Guid m_guid;
+		[SerializeField] private string m_assetDatabaseId;
+		[SerializeField] private string m_importFrom;
+		[SerializeField] private string m_exportTo;
+		[SerializeField] private string m_variantName;
+		[SerializeField] private string m_assetTypeString;
+
+		private UnityEngine.Object[] m_data;
+		private Type m_assetType;
+		private Type m_filterType;
 
 		public string id {
 			get {
-				return guid.ToString();
+				return m_guid.ToString();
+			}
+		}
+
+		public string assetDatabaseId {
+			get {
+				return m_assetDatabaseId;
+			}
+		}
+
+		public string importFrom {
+			get {
+				return m_importFrom;
+			}
+			set {
+				m_importFrom = value;
+				AssetReferenceDatabase.SetDBDirty();
+			}
+		}
+
+		public string exportTo {
+			get {
+				return m_exportTo;
+			}
+			set {
+				m_exportTo = value;
+				AssetReferenceDatabase.SetDBDirty();
+			}
+		}
+
+		public string variantName {
+			get {
+				return m_variantName;
+			}
+			set {
+				m_variantName = value;
+				AssetReferenceDatabase.SetDBDirty();
+			}
+		}
+
+		public Type assetType {
+			get {
+				if(m_assetType == null) {
+					m_assetType = Type.GetType(m_assetTypeString);
+					if(m_assetType == null) {
+						m_assetType = TypeUtility.GetTypeOfAsset(importFrom);
+						m_assetTypeString = m_assetType.AssemblyQualifiedName;
+					}
+				}
+				return m_assetType;
+			}
+		}
+
+		public Type filterType {
+			get {
+				if(m_filterType == null) {
+					m_filterType = TypeUtility.FindTypeOfAsset(m_importFrom);
+				}
+				return m_filterType;
 			}
 		}
 
 		public string fileNameAndExtension {
 			get {
-				if(absoluteAssetPath != null) {
-					return Path.GetFileName(absoluteAssetPath);
+				if(m_importFrom != null) {
+					return Path.GetFileName(m_importFrom);
 				}
-				if(importFrom != null) {
-					return Path.GetFileName(importFrom);
-				}
-				if(exportTo != null) {
-					return Path.GetFileName(exportTo);
+				if(m_exportTo != null) {
+					return Path.GetFileName(m_exportTo);
 				}
 				return null;
 			}
@@ -41,173 +99,104 @@ namespace AssetBundleGraph {
 
 		public string path {
 			get {
-				if(importFrom != null) {
-					return importFrom;
+				if(m_importFrom != null) {
+					return m_importFrom;
 				}
-				if(absoluteAssetPath != null) {
-					return absoluteAssetPath;
-				}
-				if(exportTo != null) {
-					return exportTo;
+				if(m_exportTo != null) {
+					return m_exportTo;
 				}
 				return null;
 			}
 		}
 
-		/**
-			Create Asset info from Loader
-		*/
-		public static Asset CreateNewAssetFromLoader (string absoluteAssetPath, string importFrom) {
-			return new Asset(
+		public string absolutePath {
+			get {
+				return Application.dataPath + m_importFrom;
+			}
+		}
+
+		public UnityEngine.Object[] allData {
+			get {
+				if(m_data == null || m_data.Length == 0) {
+					m_data = AssetDatabase.LoadAllAssetsAtPath(importFrom);
+				}
+				return m_data;
+			}
+		}
+
+		public void SetDirty() {
+			if(m_data != null) {
+				foreach(var o in m_data) {
+					EditorUtility.SetDirty(o);
+				}
+			}
+		}
+
+		public void ReleaseData() {
+			if(m_data != null) {
+				foreach(var o in m_data) {
+					if(o is UnityEngine.GameObject || o is UnityEngine.Component) {
+						// do nothing.
+						// NOTE: DestroyImmediate() will destroy persistant GameObject in prefab. Do not call it.
+					} else {
+						LogUtility.Logger.LogFormat(LogType.Log, "Unloading {0} ({1})", importFrom, o.GetType().ToString());
+						Resources.UnloadAsset(o);
+					}
+				}
+				m_data = null;
+			}
+		}
+
+		public void TouchImportAsset() {
+			System.IO.File.SetLastWriteTime(importFrom, DateTime.UtcNow);
+		}
+
+		public static AssetReference CreateReference (string importFrom) {
+			return new AssetReference(
 				guid: Guid.NewGuid(),
 				assetDatabaseId:AssetDatabase.AssetPathToGUID(importFrom),
-				absoluteAssetPath:absoluteAssetPath,
 				importFrom:importFrom,
 				assetType:TypeUtility.GetTypeOfAsset(importFrom)
 			);
 		}
 
-		/**
-			new assets which is generated on ImportSetting and PrefabBuilder.
-		*/
-		public static Asset CreateNewAssetWithImportPathAndStatus (string importFrom, bool isNew, bool isBundled) {
-			return new Asset(
-				guid:Guid.NewGuid(),
+		public static AssetReference CreatePrefabReference (string importFrom) {
+			return new AssetReference(
+				guid: Guid.NewGuid(),
 				assetDatabaseId:AssetDatabase.AssetPathToGUID(importFrom),
 				importFrom:importFrom,
-				assetType:TypeUtility.GetTypeOfAsset(importFrom),
-				isNew:isNew,
-				isBundled:isBundled
+				assetType:typeof(GameObject)
 			);
 		}
 
-		/**
-		 * used by BundleBuilder
-		*/
-		public static Asset CreateAssetWithImportPath (string importFrom) {
-			return new Asset(
+		public static AssetReference CreateAssetBundleReference (string path) {
+			return new AssetReference(
 				guid: Guid.NewGuid(),
-				importFrom:importFrom);
-		}
-
-		/**
-		 * used by Exporter
-		*/
-		public static Asset CreateAssetWithExportPath (string exportTo) {
-			return new Asset(
-				guid: Guid.NewGuid(),
-				exportTo:exportTo
+				assetDatabaseId:AssetDatabase.AssetPathToGUID(path),
+				importFrom:path,
+				assetType:typeof(AssetBundleReference)
 			);
 		}
 
-		/**
-			Create Asset with new assetType configured
-		*/
-		public static Asset DuplicateAsset (Asset asset) {
-			return new Asset(
-				guid:asset.guid,
-				assetDatabaseId:asset.assetDatabaseId,
-				absoluteAssetPath:asset.absoluteAssetPath,
-				importFrom:asset.importFrom,
-				exportTo:asset.exportTo,
-				assetType:asset.assetType,
-				isNew:asset.isNew,
-				isBundled:asset.isBundled,
-				variantName:asset.variantName
-			);
-		}
-
-		/**
-			Create Asset with new assetType configured
-		*/
-		public static Asset DuplicateAssetWithNewType (Asset asset, Type newAssetType) {
-			return new Asset(
-				guid:asset.guid,
-				assetDatabaseId:asset.assetDatabaseId,
-				absoluteAssetPath:asset.absoluteAssetPath,
-				importFrom:asset.importFrom,
-				exportTo:asset.exportTo,
-				assetType:newAssetType,
-				isNew:asset.isNew,
-				isBundled:asset.isBundled,
-				variantName:asset.variantName
-			);
-		}
-
-		public static Asset DuplicateAssetWithVariant (Asset asset, string variantName) {
-			return new Asset(
-				guid:asset.guid,
-				assetDatabaseId:asset.assetDatabaseId,
-				absoluteAssetPath:asset.absoluteAssetPath,
-				importFrom:asset.importFrom,
-				exportTo:asset.exportTo,
-				assetType:asset.assetType,
-				isNew:asset.isNew,
-				isBundled:asset.isBundled,
-				variantName:variantName
-			);
-		}
-
-		/**
-			Create Asset with new status (isNew, isBundled) configured
-		*/
-		public static Asset DuplicateAssetWithNewStatus (Asset asset, bool isNew, bool isBundled) {
-			return new Asset(
-				guid:asset.guid,
-				assetDatabaseId:asset.assetDatabaseId,
-				absoluteAssetPath:asset.absoluteAssetPath,
-				importFrom:asset.importFrom,
-				exportTo:asset.exportTo,
-				assetType:asset.assetType,
-				isNew:isNew,
-				isBundled:isBundled,
-				variantName:asset.variantName
-			);
-		}
-
-		private Asset (
+		private AssetReference (
 			Guid guid,
 			string assetDatabaseId = null,
-			string absoluteAssetPath = null,
-//			string sourceBasePath = null,
-//			string fileNameAndExtension = null,
-//			string pathUnderSourceBase = null,
 			string importFrom = null,
 			string exportTo = null,
 			Type assetType = null,
-			bool isNew = false,
-			bool isBundled = false,
 			string variantName = null
 		) {
-			if(assetType == typeof(object)) {
-				throw new AssetBundleGraphException("Unknown type asset is created:" + absoluteAssetPath);
+			if(assetType == null) {
+				throw new AssetReferenceException(importFrom, "Invalid type of asset created:" + importFrom);
 			}
 
-			this.guid = guid;
-			this.absoluteAssetPath = absoluteAssetPath;
-//			this.sourceBasePath = sourceBasePath;
-//			this.fileNameAndExtension = fileNameAndExtension;
-//			this.pathUnderSourceBase = pathUnderSourceBase;
-			this.importFrom = importFrom;
-			this.exportTo = exportTo;
-			this.assetDatabaseId = assetDatabaseId;
-			this.assetType = assetType;
-			this.isNew = isNew;
-			this.isBundled = isBundled;
-			this.variantName = variantName;
-		}
-/*		
-		public static string GetPathWithoutBasePath (string localPathWithBasePath, string basePath) {
-			var replaced = localPathWithBasePath.Replace(basePath, string.Empty);
-			if (replaced.StartsWith(AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR.ToString())) return replaced.Substring(1);
-			return replaced;
-		}
-*/
-		public string GetAbsolutePathOrImportedPath () {
-			if (absoluteAssetPath != null) {
-				return absoluteAssetPath;
-			}
-			return importFrom;		
+			this.m_guid = guid;
+			this.m_importFrom = importFrom;
+			this.m_exportTo = exportTo;
+			this.m_assetDatabaseId = assetDatabaseId;
+			this.m_assetType = assetType;
+			this.m_assetTypeString = assetType.AssemblyQualifiedName;
+			this.m_variantName = variantName;
 		}
 	}
 }

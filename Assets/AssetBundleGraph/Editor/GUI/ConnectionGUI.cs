@@ -8,60 +8,74 @@ using System.Collections.Generic;
 namespace AssetBundleGraph {
 	[Serializable] 
 	public class ConnectionGUI {
-		[SerializeField] private string label;
-		[SerializeField] private string id;
+		[SerializeField] private ConnectionData m_data;
 
-		[SerializeField] private ConnectionPointData outputPoint;
-		[SerializeField] private ConnectionPointData inputPoint;
-		[SerializeField] private ConnectionGUIInspectorHelper conInsp;
+		[SerializeField] private ConnectionPointData m_outputPoint;
+		[SerializeField] private ConnectionPointData m_inputPoint;
+		[SerializeField] private ConnectionGUIInspectorHelper m_inspector;
 
 		[SerializeField] private string connectionButtonStyle;
 
 		public string Label {
 			get {
-				return label;
+				return m_data.Label;
 			}
 			set {
-				label = value;
+				m_data.Label = value;
 			}
 		}
 
 		public string Id {
 			get {
-				return id;
+				return m_data.Id;
 			}
 		}
 
 		public string OutputNodeId {
 			get {
-				return outputPoint.NodeId;
+				return m_outputPoint.NodeId;
 			}
 		}
 
 		public string InputNodeId {
 			get {
-				return inputPoint.NodeId;
+				return m_inputPoint.NodeId;
 			}
 		}
 
 		public ConnectionPointData OutputPoint {
 			get {
-				return outputPoint;
+				return m_outputPoint;
 			}
 		}
 
 		public ConnectionPointData InputPoint {
 			get {
-				return inputPoint;
+				return m_inputPoint;
 			}
 		}
 
-		private Rect buttonRect;
+		public ConnectionData Data {
+			get {
+				return m_data;
+			}
+		}
 
-		public static ConnectionGUI LoadConnection (string label, string id, ConnectionPointData output, ConnectionPointData input) {
+		public ConnectionGUIInspectorHelper Inspector {
+			get {
+				if(m_inspector == null) {
+					m_inspector = ScriptableObject.CreateInstance<ConnectionGUIInspectorHelper>();
+					m_inspector.hideFlags = HideFlags.DontSave;
+				}
+				return m_inspector;
+			}
+		}
+
+		private Rect m_buttonRect;
+
+		public static ConnectionGUI LoadConnection (ConnectionData data, ConnectionPointData output, ConnectionPointData input) {
 			return new ConnectionGUI(
-				label,
-				id,
+				data,
 				output,
 				input
 			);
@@ -69,35 +83,32 @@ namespace AssetBundleGraph {
 
 		public static ConnectionGUI CreateConnection (string label, ConnectionPointData output, ConnectionPointData input) {
 			return new ConnectionGUI(
-				label,
-				Guid.NewGuid().ToString(),
+				new ConnectionData(label, output, input),
 				output,
 				input
 			);
 		}
 
-		private ConnectionGUI (string label, string id, ConnectionPointData output, ConnectionPointData input) {
+		private ConnectionGUI (ConnectionData data, ConnectionPointData output, ConnectionPointData input) {
 
 			UnityEngine.Assertions.Assert.IsTrue(output.IsOutput, "Given Output point is not output.");
 			UnityEngine.Assertions.Assert.IsTrue(input.IsInput,   "Given Input point is not input.");
 
-			conInsp = ScriptableObject.CreateInstance<ConnectionGUIInspectorHelper>();
-			conInsp.hideFlags = HideFlags.DontSave;
+			m_inspector = ScriptableObject.CreateInstance<ConnectionGUIInspectorHelper>();
+			m_inspector.hideFlags = HideFlags.DontSave;
 
-			this.label = label;
-			this.id = id;
-
-			this.outputPoint = output;
-			this.inputPoint = input;
+			this.m_data = data;
+			this.m_outputPoint = output;
+			this.m_inputPoint = input;
 
 			connectionButtonStyle = "sv_label_0";
 		}
 
 		public Rect GetRect () {
-			return buttonRect;
+			return m_buttonRect;
 		}
 		
-		public void DrawConnection (List<NodeGUI> nodes, Dictionary<string, List<Asset>> assetGroups) {
+		public void DrawConnection (List<NodeGUI> nodes, Dictionary<string, List<AssetReference>> assetGroups) {
 
 			var startNode = nodes.Find(node => node.Id == OutputNodeId);
 			if (startNode == null) {
@@ -109,10 +120,10 @@ namespace AssetBundleGraph {
 				return;
 			}
 
-			var startPoint = NodeGUI.ScaleEffect(outputPoint.GetGlobalPosition(startNode));
+			var startPoint = NodeGUI.ScaleEffect(m_outputPoint.GetGlobalPosition(startNode));
 			var startV3 = new Vector3(startPoint.x, startPoint.y, 0f);
 
-			var endPoint = NodeGUI.ScaleEffect(inputPoint.GetGlobalPosition(endNode));
+			var endPoint = NodeGUI.ScaleEffect(m_inputPoint.GetGlobalPosition(endNode));
 			var endV3 = new Vector3(endPoint.x, endPoint.y + 1f, 0f);
 			
 			var centerPoint = startPoint + ((endPoint - startPoint) / 2);
@@ -131,31 +142,36 @@ namespace AssetBundleGraph {
 				totalGroups = assetGroups.Keys.Count;
 			}
 
-			if(conInsp != null && Selection.activeObject == conInsp && conInsp.connectionGUI == this) {
+			if(m_inspector != null && Selection.activeObject == m_inspector && m_inspector.connectionGUI == this) {
 				Handles.DrawBezier(startV3, endV3, startTan, endTan, new Color(0.43f, 0.65f, 0.90f, 1.0f), null, 2f);
 			} else {
 				Handles.DrawBezier(startV3, endV3, startTan, endTan, ((totalAssets > 0) ? Color.white : Color.gray), null, 2f);
 			}
 
 
-
 			// draw connection label if connection's label is not normal.
 			if (NodeGUI.scaleFactor == NodeGUI.SCALE_MAX) {
-				switch (label){
+
+				GUIStyle labelStyle = new GUIStyle("WhiteMiniLabel");
+				labelStyle.alignment = TextAnchor.MiddleLeft;
+
+				switch (Label){
 					case AssetBundleGraphSettings.DEFAULT_OUTPUTPOINT_LABEL: {
 						// show nothing
 						break;
 					}
 					
 					case AssetBundleGraphSettings.BUNDLECONFIG_BUNDLE_OUTPUTPOINT_LABEL: {
-						var labelPointV3 = new Vector3(centerPointV3.x - ((AssetBundleGraphSettings.BUNDLECONFIG_BUNDLE_OUTPUTPOINT_LABEL.Length * 6f) / 2), centerPointV3.y - 24f, 0f) ;
-						Handles.Label(labelPointV3, AssetBundleGraphSettings.BUNDLECONFIG_BUNDLE_OUTPUTPOINT_LABEL, "WhiteMiniLabel");
+						var labelWidth = labelStyle.CalcSize(new GUIContent(AssetBundleGraphSettings.BUNDLECONFIG_BUNDLE_OUTPUTPOINT_LABEL));
+						var labelPointV3 = new Vector3(centerPointV3.x - (labelWidth.x / 2), centerPointV3.y - 24f, 0f) ;
+						Handles.Label(labelPointV3, AssetBundleGraphSettings.BUNDLECONFIG_BUNDLE_OUTPUTPOINT_LABEL, labelStyle);
 						break;
 					}
 
 					default: {
-						var labelPointV3 = new Vector3(centerPointV3.x - ((label.Length * 7f) / 2), centerPointV3.y - 24f, 0f) ;
-						Handles.Label(labelPointV3, label, "WhiteMiniLabel");
+						var labelWidth = labelStyle.CalcSize(new GUIContent(Label));
+						var labelPointV3 = new Vector3(centerPointV3.x - (labelWidth.x / 2), centerPointV3.y - 24f, 0f) ;
+						Handles.Label(labelPointV3, Label, labelStyle);
 						break;
 					}
 				}
@@ -171,14 +187,14 @@ namespace AssetBundleGraph {
 			var style = new GUIStyle(connectionButtonStyle);
 
 			var labelSize = style.CalcSize(new GUIContent(connectionLabel));
-			buttonRect = new Rect(centerPointV3.x - labelSize.x/2f, centerPointV3.y - labelSize.y/2f, labelSize.x, 30f);
+			m_buttonRect = new Rect(centerPointV3.x - labelSize.x/2f, centerPointV3.y - labelSize.y/2f, labelSize.x, 30f);
 
 			if (
 				Event.current.type == EventType.ContextClick
 				|| (Event.current.type == EventType.MouseUp && Event.current.button == 1)
 			) {
 				var rightClickPos = Event.current.mousePosition;
-				if (buttonRect.Contains(rightClickPos)) {
+				if (m_buttonRect.Contains(rightClickPos)) {
 					var menu = new GenericMenu();
 					menu.AddItem(
 						new GUIContent("Delete"),
@@ -192,18 +208,18 @@ namespace AssetBundleGraph {
 				}
 			}
 
-			if (GUI.Button(buttonRect, connectionLabel, style)) {
-				conInsp.UpdateInspector(this, assetGroups);
+			if (GUI.Button(m_buttonRect, connectionLabel, style)) {
+				Inspector.UpdateInspector(this, assetGroups);
 				ConnectionGUIUtility.ConnectionEventHandler(new ConnectionEvent(ConnectionEvent.EventType.EVENT_CONNECTION_TAPPED, this));
 			}
 		}
 
 		public bool IsEqual (ConnectionPointData from, ConnectionPointData to) {
-			return (outputPoint == from && inputPoint == to);
+			return (m_outputPoint == from && m_inputPoint == to);
 		}
 		
 		public void SetActive () {
-			Selection.activeObject = conInsp;
+			Selection.activeObject = Inspector;
 			connectionButtonStyle = "sv_label_1";
 		}
 

@@ -1,7 +1,7 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2008
-
-Project("{5E01A7A8-B1F7-8DE3-906B-A10F68A6EAC2}") = "Advent2016_AssetBundleGraph", "Assembly-CSharp-Editor.csproj", "{A01FDA56-3389-2F57-E2B1-EF2BECF45021}"
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Advent2016_AssetBundleGraph", "Assembly-CSharp-Editor.csproj", "{A01FDA56-3389-2F57-E2B1-EF2BECF45021}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -71,16 +71,26 @@ namespace AssetBundleGraph {
 			}
 		}
 
+		private NodeGUIInspectorHelper Inspector {
+			get {
+				if(m_nodeInsp == null) {
+					m_nodeInsp = ScriptableObject.CreateInstance<NodeGUIInspectorHelper>();
+					m_nodeInsp.hideFlags = HideFlags.DontSave;
+				}
+				return m_nodeInsp;
+			}
+		}
+
 		public void ResetErrorStatus () {
 			m_hasErrors = false;
-			this.m_nodeInsp.UpdateNode(this);
-			this.m_nodeInsp.UpdateErrors(new List<string>());
+			Inspector.UpdateNode(this);
+			Inspector.UpdateErrors(new List<string>());
 		}
 
 		public void AppendErrorSources (List<string> errors) {
 			this.m_hasErrors = true;
-			this.m_nodeInsp.UpdateNode(this);
-			this.m_nodeInsp.UpdateErrors(errors);
+			Inspector.UpdateNode(this);
+			Inspector.UpdateErrors(errors);
 		}
 
 		public int WindowId {
@@ -94,17 +104,12 @@ namespace AssetBundleGraph {
 		}
 
 		public NodeGUI (NodeData data) {
-			this.m_nodeInsp = ScriptableObject.CreateInstance<NodeGUIInspectorHelper>();
-			this.m_nodeInsp.hideFlags = HideFlags.DontSave;
-			this.m_nodeWindowId = 0;
+			m_nodeWindowId = 0;
+			m_data = data;
 
-			this.m_data = data;
+			m_baseRect = new Rect(m_data.X, m_data.Y, AssetBundleGraphSettings.GUI.NODE_BASE_WIDTH, AssetBundleGraphSettings.GUI.NODE_BASE_HEIGHT);
 
-			this.m_baseRect = new Rect(m_data.X, m_data.Y, AssetBundleGraphSettings.GUI.NODE_BASE_WIDTH, AssetBundleGraphSettings.GUI.NODE_BASE_HEIGHT);
-
-			this.m_nodeSyle = NodeGUIUtility.UnselectedStyle[m_data.Kind];
-
-			UpdateNodeRect();
+			m_nodeSyle = NodeGUIUtility.UnselectedStyle[m_data.Kind];
 		}
 
 		public NodeGUI Duplicate (float newX, float newY) {
@@ -115,33 +120,25 @@ namespace AssetBundleGraph {
 		}
 
 		public void SetActive () {
-			m_nodeInsp.UpdateNode(this);
-			Selection.activeObject = m_nodeInsp;
-			this.m_nodeSyle = NodeGUIUtility.SelectedStyle[m_data.Kind];
+			Inspector.UpdateNode(this);
+			Selection.activeObject = Inspector;
+			m_nodeSyle = NodeGUIUtility.SelectedStyle[m_data.Kind];
 		}
 
 		public void SetInactive () {
-			this.m_nodeSyle = NodeGUIUtility.UnselectedStyle[m_data.Kind];
+			m_nodeSyle = NodeGUIUtility.UnselectedStyle[m_data.Kind];
 		}
 			
-		private void RefreshConnectionPos () {
+		private void RefreshConnectionPos (float yOffset) {
 			for (int i = 0; i < m_data.InputPoints.Count; i++) {
 				var point = m_data.InputPoints[i];
-				point.UpdateRegion(this, i, m_data.InputPoints.Count);
+				point.UpdateRegion(this, yOffset, i, m_data.InputPoints.Count);
 			}
 
 			for (int i = 0; i < m_data.OutputPoints.Count; i++) {
 				var point = m_data.OutputPoints[i];
-				point.UpdateRegion(this, i, m_data.OutputPoints.Count);
+				point.UpdateRegion(this, yOffset, i, m_data.OutputPoints.Count);
 			}
-		}
-
-		public void DrawNode () {
-			var scaledBaseRect = ScaleEffect(m_baseRect);
-
-			var movedRect = GUI.Window(m_nodeWindowId, scaledBaseRect, DrawThisNode, string.Empty, m_nodeSyle);
-
-			m_baseRect.position = m_baseRect.position + (movedRect.position - scaledBaseRect.position);
 		}
 
 		public static Rect ScaleEffect (Rect nonScaledRect) {
@@ -160,10 +157,16 @@ namespace AssetBundleGraph {
 			return scaledVector2;
 		}
 
-		private void DrawThisNode(int id) {
-			HandleNodeEvent ();
-			DrawNodeContents();
-			GUI.DragWindow();
+		private bool IsValidInputConnectionPoint(ConnectionPointData point) {
+
+			if(m_data.Kind == NodeKind.BUNDLECONFIG_GUI && !m_data.BundleConfigUseGroupAsVariants) {
+				if(m_data.Variants.Count > 0 && m_data.Variants.Find(v => v.ConnectionPointId == point.Id) == null) 
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		/**
@@ -219,8 +222,11 @@ namespace AssetBundleGraph {
 						if(eventRaised) {
 							return;
 						}
-//						var region = point.Region;
-//						var globalConnectonPointRect = new Rect(region.x, region.y, region.width, region.height);
+
+						if(!IsValidInputConnectionPoint(point)) {
+							return;
+						}
+
 						if (point.Region.Contains(Event.current.mousePosition)) {
 							NodeGUIUtility.NodeEventHandler(
 								new NodeEvent(NodeEvent.EventType.EVENT_NODE_CONNECTION_RAISED, 
@@ -246,6 +252,18 @@ namespace AssetBundleGraph {
 				if (Event.current.type == EventType.ContextClick || (Event.current.type == EventType.MouseUp && Event.current.button == 1)) 
 				{
 					var menu = new GenericMenu();
+
+					MonoScript s = TypeUtility.LoadMonoScript(Data.ScriptClassName);
+					if(s != null) {
+						menu.AddItem(
+							new GUIContent("Edit Script"),
+							false, 
+							() => {
+								AssetDatabase.OpenAsset(s, 0);
+							}
+						);
+					}
+
 					menu.AddItem(
 						new GUIContent("Delete"),
 						false, 
@@ -277,11 +295,10 @@ namespace AssetBundleGraph {
 				}
 			}
 
-			foreach (var point in m_data.InputPoints) {				
-				GUI.DrawTexture(
-					point.GetGlobalPointRegion(this), 
-					defaultPointTex
-				);
+			foreach (var point in m_data.InputPoints) {
+				if(IsValidInputConnectionPoint(point)) {
+					GUI.DrawTexture(point.GetGlobalPointRegion(this), defaultPointTex);
+				}
 			}
 		}
 
@@ -323,7 +340,24 @@ namespace AssetBundleGraph {
 			}
 		}
 
+		public void DrawNode () {
+			var scaledBaseRect = ScaleEffect(m_baseRect);
+
+			var movedRect = GUI.Window(m_nodeWindowId, scaledBaseRect, DrawThisNode, string.Empty, m_nodeSyle);
+
+			m_baseRect.position = m_baseRect.position + (movedRect.position - scaledBaseRect.position);
+		}
+
+		private void DrawThisNode(int id) {
+			UpdateNodeRect ();
+			HandleNodeEvent ();
+			DrawNodeContents();
+			GUI.DragWindow();
+		}
+			
 		private void DrawNodeContents () {
+			var oldColor = GUI.color;
+			var textColor = (EditorGUIUtility.isProSkin)? Color.black : oldColor;
 			var style = new GUIStyle(EditorStyles.label);
 			style.alignment = TextAnchor.MiddleCenter;
 
@@ -333,8 +367,11 @@ namespace AssetBundleGraph {
 			var connectionNodeStyleInput = new GUIStyle(EditorStyles.label);
 			connectionNodeStyleInput.alignment = TextAnchor.MiddleLeft;
 
-			var nodeTitleRect = new Rect(0, 0, m_baseRect.width * scaleFactor, m_baseRect.height * scaleFactor);
+			var titleHeight = style.CalcSize(new GUIContent(Name)).y + AssetBundleGraphSettings.GUI.NODE_TITLE_HEIGHT_MARGIN;
+			var nodeTitleRect = new Rect(0, 0, m_baseRect.width * scaleFactor, titleHeight);
+			GUI.color = textColor;
 			GUI.Label(nodeTitleRect, Name, style);
+			GUI.color = oldColor;
 
 			if (m_running) {
 				EditorGUI.ProgressBar(new Rect(10f, m_baseRect.height - 20f, m_baseRect.width - 20f, 10f), m_progress, string.Empty);
@@ -360,7 +397,9 @@ namespace AssetBundleGraph {
 						var labelStyle = (point.IsOutput) ? connectionNodeStyleOutput : connectionNodeStyleInput;
 						var labelRect = new Rect(region.x + xOffset, region.y - (region.height/2), m_baseRect.width, region.height*2);
 
+						GUI.color = textColor;
 						GUI.Label(labelRect, label, labelStyle);
+						GUI.color = oldColor;
 					}
 					GUI.backgroundColor = Color.clear;
 					Texture2D tex = (point.IsInput)? NodeGUIUtility.inputPointTex : NodeGUIUtility.outputPointTex;
@@ -374,39 +413,50 @@ namespace AssetBundleGraph {
 		public void UpdateNodeRect () {
 			// UpdateNodeRect will be called outside OnGUI(), so it use inacurate but simple way to calcurate label width
 			// instead of CalcSize()
-			var contentLabelWordsLength = this.Name.Length;
+
+			float labelWidth = GUI.skin.label.CalcSize(new GUIContent(this.Name)).x;
+			float outputLabelWidth = 0f;
+			float inputLabelWidth = 0f;
 
 			if(m_data.InputPoints.Count > 0) {
-				var inputLabels = m_data.InputPoints.OrderByDescending(p => p.Label.Length).Select(p => p.Label.Length).ToList();
+				var inputLabels = m_data.InputPoints.OrderByDescending(p => p.Label.Length).Select(p => p.Label);
 				if (inputLabels.Any()) {
-					contentLabelWordsLength = contentLabelWordsLength + 1 + inputLabels[0];
+					inputLabelWidth = GUI.skin.label.CalcSize(new GUIContent(inputLabels.First())).x;
 				}
 			}
 
 			if(m_data.OutputPoints.Count > 0) {
-				var outputLabels = m_data.OutputPoints.OrderByDescending(p => p.Label.Length).Select(p => p.Label.Length).ToList();
+				var outputLabels = m_data.OutputPoints.OrderByDescending(p => p.Label.Length).Select(p => p.Label);
 				if (outputLabels.Any()) {
-					contentLabelWordsLength = contentLabelWordsLength + 1 + outputLabels[0];
+					outputLabelWidth = GUI.skin.label.CalcSize(new GUIContent(outputLabels.First())).x;
 				}
 			}
+
+			var titleHeight = GUI.skin.label.CalcSize(new GUIContent(Name)).y + AssetBundleGraphSettings.GUI.NODE_TITLE_HEIGHT_MARGIN;
 
 			// update node height by number of output connectionPoint.
 			var nPoints = Mathf.Max(m_data.OutputPoints.Count, m_data.InputPoints.Count);
 			this.m_baseRect = new Rect(m_baseRect.x, m_baseRect.y, 
 				m_baseRect.width, 
-				AssetBundleGraphSettings.GUI.NODE_BASE_HEIGHT + (AssetBundleGraphSettings.GUI.FILTER_OUTPUT_SPAN * Mathf.Max(0, (nPoints - 1)))
+				AssetBundleGraphSettings.GUI.NODE_BASE_HEIGHT + titleHeight + (AssetBundleGraphSettings.GUI.FILTER_OUTPUT_SPAN * Mathf.Max(0, (nPoints - 1)))
 			);
 
-			var newWidth = Mathf.Max(AssetBundleGraphSettings.GUI.NODE_BASE_WIDTH, contentLabelWordsLength * 10.0f);
+			var newWidth = Mathf.Max(AssetBundleGraphSettings.GUI.NODE_BASE_WIDTH, outputLabelWidth + inputLabelWidth + AssetBundleGraphSettings.GUI.NODE_WIDTH_MARGIN);
+			newWidth = Mathf.Max(newWidth, labelWidth + AssetBundleGraphSettings.GUI.NODE_WIDTH_MARGIN);
 			m_baseRect = new Rect(m_baseRect.x, m_baseRect.y, newWidth, m_baseRect.height);
 
-			RefreshConnectionPos();
+			RefreshConnectionPos(titleHeight);
 		}
 
 		private ConnectionPointData IsOverConnectionPoint (Vector2 touchedPoint) {
 
 			foreach(var p in m_data.InputPoints) {
 				var region = p.Region;
+
+				if(!IsValidInputConnectionPoint(p)) {
+					continue;
+				}
+
 				if (region.x <= touchedPoint.x && 
 					touchedPoint.x <= region.x + region.width && 
 					region.y <= touchedPoint.y && 
@@ -491,6 +541,10 @@ namespace AssetBundleGraph {
 		public ConnectionPointData FindConnectionPointByPosition (Vector2 globalPos) {
 
 			foreach (var point in m_data.InputPoints) {
+				if(!IsValidInputConnectionPoint(point)) {
+					continue;
+				}
+
 				if (point.GetGlobalRegion(this).Contains(globalPos) || 
 					point.GetGlobalPointRegion(this).Contains(globalPos)) 
 				{

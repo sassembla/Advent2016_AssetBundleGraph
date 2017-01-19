@@ -1,0 +1,13 @@
+ManifestFileVersion: 0
+CRC: 4131967951
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: kohaku.assetbundle
+      Dependencies: {}
+    Info_1:
+      Name: misaki.assetbundle
+      Dependencies: {}
+    Info_2:
+      Name: yuko.assetbundle
+      Dependencies: {}

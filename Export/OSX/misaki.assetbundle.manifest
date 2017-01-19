@@ -1,0 +1,21 @@
+ManifestFileVersion: 0
+CRC: 2843890573
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: bd63657c41845bdec0e93d9dc883d565
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c1642440719609290a7e09a50a7286f4
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- Assets/Game/Images/PNG/portrait_misaki_02.png
+- Assets/Game/Images/PNG/portrait_misaki_05.png
+- Assets/Game/Images/PNG/portrait_misaki_01.png
+- Assets/Game/Images/PNG/portrait_misaki_06.png
+- Assets/Game/Images/PNG/portrait_misaki_03.png
+- Assets/Game/Images/PNG/portrait_misaki_04.png
+Dependencies: []

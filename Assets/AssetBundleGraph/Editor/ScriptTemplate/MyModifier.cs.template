@@ -10,19 +10,20 @@ public class MyModifier : AssetBundleGraph.IModifier {
 	[SerializeField] private bool doSomething;
 
 	// Test if asset is different from intended configuration 
-	public bool IsModified (object asset) {
+	public bool IsModified (UnityEngine.Object[] assets) {
 		return false;
 	}
 
 	// Actually change asset configurations. 
-	public void Modify (object asset) {
+	public void Modify (UnityEngine.Object[] assets) {
 	}
 
 	// Draw inspector gui 
 	public void OnInspectorGUI (Action onValueChanged) {
-		GUILayout.Label("MyModifier!");
 
-		var newValue = GUILayout.Toggle(doSomething, "Do Something");
+		EditorGUILayout.HelpBox("This is the inspector of your custom Modifier. You can customize by implementing OnInspectorGUI().", MessageType.Info);
+
+		var newValue = GUILayout.Toggle(doSomething, "Example toggle");
 		if(newValue != doSomething) {
 			doSomething = newValue;
 			onValueChanged();
