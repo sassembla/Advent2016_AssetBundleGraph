@@ -18,12 +18,12 @@ namespace AssetBundleGraph {
 		 * Test if incoming assset is different from this IModifier's setting.
 		 * asset is always type of object defined
 		 */ 
-		bool IsModified (object asset);
+		bool IsModified (UnityEngine.Object[] assets);
 
 		/**
 		 * Modifies incoming asset.
 		 */ 
-		void Modify (object asset);
+		void Modify (UnityEngine.Object[] assets);
 
 		/**
 		 * Draw Inspector GUI for this Modifier.
@@ -102,7 +102,7 @@ namespace AssetBundleGraph {
 						if (!map.ContainsKey(attr.Name)) {
 							map[attr.Name] = type.FullName;
 						} else {
-							Debug.LogWarning("Multiple CustomModifier class with the same name/type found. Ignoring " + type.Name);
+							LogUtility.Logger.LogWarning(LogUtility.kTag, "Multiple CustomModifier class with the same name/type found. Ignoring " + type.Name);
 						}
 					}
 				}
@@ -173,20 +173,7 @@ namespace AssetBundleGraph {
 		}
 
 		public static IModifier CreateModifier(NodeData node, BuildTargetGroup targetGroup) {
-
-			var data  = node.InstanceData[targetGroup];
-			var className = node.ScriptClassName;
-			Type dataType = null;
-
-			if(!string.IsNullOrEmpty(className)) {
-				dataType = Type.GetType(className);
-			}
-
-			if(data != null && dataType != null) {
-				return JsonUtility.FromJson(data, dataType) as IModifier;
-			}
-
-			return null;
+			return InstanceDataUtility<IModifier>.CreateInstance(node, targetGroup);
 		}
 
 		public static IModifier CreateModifier(string guiName, Type targetType) {

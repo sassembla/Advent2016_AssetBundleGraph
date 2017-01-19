@@ -2,6 +2,7 @@ using UnityEngine;
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEditor;
 
@@ -9,11 +10,9 @@ namespace AssetBundleGraph {
 	public class IntegratedGUILoader : INodeOperation {
 		public void Setup (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
 			ValidateLoadPath(
 				node.LoaderLoadPath[target],
@@ -27,30 +26,33 @@ namespace AssetBundleGraph {
 				}
 			);
 
-			Load(target, node, connectionToOutput, inputGroupAssets, Output);
+			Load(target, node, connectionsToOutput, Output);
 		}
 		
 		public void Run (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output,
+			Action<NodeData, string, float> progressFunc) 
 		{
-			Load(target, node, connectionToOutput, inputGroupAssets, Output);
+			//Load operation is completed furing Setup() phase, so do nothing in Run.
 		}
 
 		void Load (BuildTarget target, 
 			NodeData node, 
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
+
+			if(connectionsToOutput == null || Output == null) {
+				return;
+			}
+
 			// SOMEWHERE_FULLPATH/PROJECT_FOLDER/Assets/
 			var assetsFolderPath = Application.dataPath + AssetBundleGraphSettings.UNITY_FOLDER_SEPARATOR;
 
-			var outputSource = new List<Asset>();
+			var outputSource = new List<AssetReference>();
 			var targetFilePaths = FileUtility.GetAllFilePathsInFolder(node.GetLoaderFullLoadPath(target));
 
 			foreach (var targetFilePath in targetFilePaths) {
@@ -64,23 +66,28 @@ namespace AssetBundleGraph {
 				if (targetFilePath.StartsWith(assetsFolderPath)) {
 					var relativePath = targetFilePath.Replace(assetsFolderPath, AssetBundleGraphSettings.ASSETS_PATH);
 
-					var assetType = TypeUtility.GetTypeOfAsset(relativePath);
-					if (assetType == typeof(object)) {
+					var r = AssetReferenceDatabase.GetReference(relativePath);
+
+					if(!TypeUtility.IsLoadingAsset(r)) {
 						continue;
 					}
 
-					outputSource.Add(Asset.CreateNewAssetFromLoader(targetFilePath, relativePath));
+					if(r != null) {
+						outputSource.Add(AssetReferenceDatabase.GetReference(relativePath));
+					}
 					continue;
 				}
 
 				throw new NodeException(node.Name + ": Invalid Load Path. Path must start with Assets/", node.Name);
 			}
 
-			var outputDir = new Dictionary<string, List<Asset>> {
+			var output = new Dictionary<string, List<AssetReference>> {
 				{"0", outputSource}
 			};
 
-			Output(connectionToOutput, outputDir, null);
+			var dst = (connectionsToOutput == null || !connectionsToOutput.Any())? 
+				null : connectionsToOutput.First();
+			Output(dst, output);
 		}
 
 		public static void ValidateLoadPath (string currentLoadPath, string combinedPath, Action NullOrEmpty, Action NotExist) {

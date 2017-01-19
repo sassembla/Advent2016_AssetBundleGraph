@@ -15,15 +15,11 @@ namespace AssetBundleGraph {
 		
 		public void Setup (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
-			var incomingAssets = inputGroupAssets.SelectMany(v => v.Value).ToList();
-
-			Action<Type, Type, Asset> multipleAssetTypeFound = (Type expectedType, Type foundType, Asset foundAsset) => {
+			Action<Type, Type, AssetReference> multipleAssetTypeFound = (Type expectedType, Type foundType, AssetReference foundAsset) => {
 				throw new NodeException(string.Format("{3} :ImportSetting expect {0}, but different type of incoming asset is found({1} {2})", 
 					expectedType.FullName, foundType.FullName, foundAsset.fileNameAndExtension, node.Name), node.Id);
 			};
@@ -33,17 +29,20 @@ namespace AssetBundleGraph {
 					node.Name, (unsupported != null)?unsupported.FullName:"null"), node.Id);
 			};
 
-			Action<Type, Type> incomingTypeMismatch = (Type expected, Type incoming) => {
+			Action<Type, Type> incomingTypeMismatch = (Type expectedType, Type incomingType) => {
 				throw new NodeException(string.Format("{0} :Incoming asset type is does not match with this ImportSetting (Expected type:{1}, Incoming type:{2}).",
-					node.Name, (expected != null)?expected.FullName:"null", (incoming != null)?incoming.FullName:"null"), node.Id);
+					node.Name, (expectedType != null)?expectedType.FullName:"null", (incomingType != null)?incomingType.FullName:"null"), node.Id);
 			};
 
 			Action<ConfigStatus> errorInConfig = (ConfigStatus _) => {
-				// give a try first in sampling file
-				if(incomingAssets.Any()) {
-					SaveSampleFile(node, incomingAssets[0]);
 
-					ValidateInputSetting(node, target, incomingAssets, multipleAssetTypeFound, unsupportedType, incomingTypeMismatch, (ConfigStatus eType) => {
+				var firstAsset = TypeUtility.GetFirstIncomingAsset(incoming);
+
+				if(firstAsset != null) {
+					// give a try first in sampling file
+					SaveSampleFile(node, firstAsset);
+
+					ValidateInputSetting(node, target, incoming, multipleAssetTypeFound, unsupportedType, incomingTypeMismatch, (ConfigStatus eType) => {
 						if(eType == ConfigStatus.NoSampleFound) {
 							throw new NodeException(node.Name + " :ImportSetting has no sampling file. Please configure it from Inspector.", node.Id);
 						}
@@ -54,37 +53,44 @@ namespace AssetBundleGraph {
 				}
 			};
 
-			ValidateInputSetting(node, target, incomingAssets, multipleAssetTypeFound, unsupportedType, incomingTypeMismatch, errorInConfig);
+			ValidateInputSetting(node, target, incoming, multipleAssetTypeFound, unsupportedType, incomingTypeMismatch, errorInConfig);
+
+			if(incoming != null){
+				ApplyImportSetting(node, incoming);
+			}
 
 			// ImportSettings does not add, filter or change structure of group, so just pass given group of assets
-			Output(connectionToOutput, inputGroupAssets, null);
+			if(incoming != null && Output != null) {
+				var dst = (connectionsToOutput == null || !connectionsToOutput.Any())? 
+					null : connectionsToOutput.First();
+
+				foreach(var ag in incoming) {
+					Output(dst, ag.assetGroups);
+				}
+			}
 		}
 		
 		public void Run (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output,
+			Action<NodeData, string, float> progressFunc) 
 		{
-			var incomingAssets = inputGroupAssets.SelectMany(v => v.Value).ToList();
-
-			ApplyImportSetting(node, incomingAssets);
-
-			Output(connectionToOutput, inputGroupAssets, null);
+			//Operation is completed furing Setup() phase, so do nothing in Run.
 		}
 
-		private void SaveSampleFile(NodeData node, Asset asset) {
+		private void SaveSampleFile(NodeData node, AssetReference asset) {
 			var samplingDirectoryPath = FileUtility.PathCombine(AssetBundleGraphSettings.IMPORTER_SETTINGS_PLACE, node.Id);
 			if (!Directory.Exists(samplingDirectoryPath)) {
 				Directory.CreateDirectory(samplingDirectoryPath);
 			}
 
-			var absoluteFilePath = asset.absoluteAssetPath;
-			var targetFilePath = FileUtility.PathCombine(samplingDirectoryPath, asset.fileNameAndExtension);
+			var configFilePath = FileUtility.GetImportSettingTemplateFilePath(asset);
+			UnityEngine.Assertions.Assert.IsNotNull(configFilePath);
+			var targetFilePath = FileUtility.PathCombine(samplingDirectoryPath, Path.GetFileName(configFilePath));
 
-			FileUtility.CopyFileFromGlobalToLocal(absoluteFilePath, targetFilePath);
+			FileUtility.CopyFile(configFilePath, targetFilePath);
 
 			AssetDatabase.Refresh(ImportAssetOptions.ImportRecursive);
 		}
@@ -129,21 +135,25 @@ namespace AssetBundleGraph {
 			return AssetImporter.GetAtPath(sampleFiles[0]);	
 		}
 
-		private void ApplyImportSetting(NodeData node, List<Asset> assets) {
-
-			if(!assets.Any()) {
-				return;
-			}
+		private void ApplyImportSetting(NodeData node, IEnumerable<PerformGraph.AssetGroups> incoming) {
 
 			var referenceImporter = GetReferenceAssetImporter(node);	
 			var configurator = new ImportSettingsConfigurator(referenceImporter);
 
-			foreach(var asset in assets) {
-				var importer = AssetImporter.GetAtPath(asset.importFrom);
-				if(!configurator.IsEqual(importer)) {
-					configurator.OverwriteImportSettings(importer);
+			foreach(var ag in incoming) {
+				foreach(var assets in ag.assetGroups.Values) {
+					foreach(var asset in assets) {
+						var importer = AssetImporter.GetAtPath(asset.importFrom);
+						if(!configurator.IsEqual(importer)) {
+							configurator.OverwriteImportSettings(importer);
+							importer.SaveAndReimport();
+							asset.TouchImportAsset();
+						}
+					}
 				}
 			}
+
+
 		}
 
 		public enum ConfigStatus {
@@ -155,19 +165,23 @@ namespace AssetBundleGraph {
 		public static void ValidateInputSetting (
 			NodeData node,
 			BuildTarget target,
-			List<Asset> incomingAssets,
-			Action<Type, Type, Asset> multipleAssetTypeFound,
+			IEnumerable<PerformGraph.AssetGroups> incoming,
+			Action<Type, Type, AssetReference> multipleAssetTypeFound,
 			Action<Type> unsupportedType,
 			Action<Type, Type> incomingTypeMismatch,
 			Action<ConfigStatus> errorInConfig
 		) {
-			Type expectedType = TypeUtility.FindIncomingAssetType(incomingAssets);
+			Type expectedType = TypeUtility.FindFirstIncomingAssetType(incoming);
 			if(multipleAssetTypeFound != null) {
-				if(expectedType != null) {
-					foreach(var a  in incomingAssets) {
-						Type assetType = TypeUtility.FindTypeOfAsset(a.importFrom);
-						if(assetType != expectedType) {
-							multipleAssetTypeFound(expectedType, assetType, a);
+				if(expectedType != null && incoming != null) {
+					foreach(var ag in incoming) {
+						foreach(var assets in ag.assetGroups.Values) {
+							foreach(var a in assets) {
+								Type assetType = a.filterType;
+								if(assetType != expectedType) {
+									multipleAssetTypeFound(expectedType, assetType, a);
+								}
+							}
 						}
 					}
 				}
@@ -197,7 +211,7 @@ namespace AssetBundleGraph {
 			if(incomingTypeMismatch != null) {
 				// if there is no incoming assets, there is no way to check if 
 				// right type of asset is coming in - so we'll just skip the test
-				if(incomingAssets.Any() && status == ConfigStatus.GoodSampleFound) {
+				if(incoming != null && expectedType != null && status == ConfigStatus.GoodSampleFound) {
 					Type targetType = GetReferenceAssetImporter(node).GetType();
 					if( targetType != expectedType ) {
 						incomingTypeMismatch(targetType, expectedType);

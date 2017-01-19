@@ -8,87 +8,76 @@ using System.Text.RegularExpressions;
 
 namespace AssetBundleGraph {
     public class IntegratedGUIFilter : INodeOperation {
-		private readonly List<ConnectionData> connectionsToChild;
-		public IntegratedGUIFilter (List<ConnectionData> connectionsToChild) {
-			this.connectionsToChild = connectionsToChild;
-		}
 
 		public void Setup (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
 			node.ValidateOverlappingFilterCondition(true);
-			Filter(node, inputGroupAssets, Output);
+			Filter(node, incoming, connectionsToOutput, Output);
 		}
 		
 		public void Run (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output,
+			Action<NodeData, string, float> progressFunc) 
 		{
-			Filter(node, inputGroupAssets, Output);
+			//Operation is completed furing Setup() phase, so do nothing in Run.
 		}
 
-		private class FilterableAsset {
-			public Asset asset;
-			public bool isFiltered = false;
-
-			public FilterableAsset (Asset asset) {
-				this.asset = asset;
+		private void Filter (NodeData node, 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
+		{
+			if(connectionsToOutput == null || incoming == null || Output == null) {
+				return;
 			}
-		}
 
-		private void Filter (NodeData node, Dictionary<string, List<Asset>> inputGroupAssets, Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) {
+			var allOutput = new Dictionary<string, Dictionary<string, List<AssetReference>>>();
 
-			foreach(var connToChild in connectionsToChild) {
+			foreach(var outPoints in node.OutputPoints) {
+				allOutput[outPoints.Id] = new Dictionary<string, List<AssetReference>>();
+			}
 
-				var filter = node.FilterConditions.Find(fc => fc.ConnectionPoint.Id == connToChild.FromNodeConnectionPointId);
-				UnityEngine.Assertions.Assert.IsNotNull(filter);
+			foreach(var ag in incoming) {
+				foreach(var groupKey in ag.assetGroups.Keys) {
 
-				var output = new Dictionary<string, List<Asset>>();
+					foreach(var a in ag.assetGroups[groupKey]) {
+						foreach(var filter in node.FilterConditions) {
+							bool keywordMatch = Regex.IsMatch(a.importFrom, filter.FilterKeyword, 
+								RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
 
-				foreach(var groupKey in inputGroupAssets.Keys) {
-					var assets = inputGroupAssets[groupKey];
-					var filteringAssets = new List<FilterableAsset>();
-					assets.ForEach(a => filteringAssets.Add(new FilterableAsset(a)));
+							bool match = keywordMatch;
 
+							if(keywordMatch && filter.FilterKeytype != AssetBundleGraphSettings.DEFAULT_FILTER_KEYTYPE) 
+							{
+								var assumedType = a.filterType;
+								match = assumedType != null && filter.FilterKeytype == assumedType.ToString();
+							}
 
-					// filter by keyword first
-					List<FilterableAsset> keywordContainsAssets = filteringAssets.Where(
-						assetData => 
-						!assetData.isFiltered && 
-						Regex.IsMatch(assetData.asset.importFrom, filter.FilterKeyword, RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace)
-					).ToList();
-
-					List<FilterableAsset> finalFilteredAsset = new List<FilterableAsset>();
-
-					// then, filter by type
-					foreach (var a in keywordContainsAssets) {
-						if (filter.FilterKeytype != AssetBundleGraphSettings.DEFAULT_FILTER_KEYTYPE) {
-							var assumedType = TypeUtility.FindTypeOfAsset(a.asset.importFrom);
-							if (assumedType == null || filter.FilterKeytype != assumedType.ToString()) {
-								continue;
+							if(match) {
+								var output = allOutput[filter.ConnectionPointId];
+								if(!output.ContainsKey(groupKey)) {
+									output[groupKey] = new List<AssetReference>();
+								}
+								output[groupKey].Add(a);
+								// consume this asset with this output
+								break;
 							}
 						}
-						finalFilteredAsset.Add(a);
 					}
-
-					// mark assets as exhausted.
-					foreach (var a in finalFilteredAsset) {
-						a.isFiltered = true;
-					}
-
-					output[groupKey] = finalFilteredAsset.Select(v => v.asset).ToList();
 				}
+			}
 
-				Output(connToChild, output, null);
+			foreach(var dst in connectionsToOutput) {
+				if(allOutput.ContainsKey(dst.FromNodeConnectionPointId)) {
+					Output(dst, allOutput[dst.FromNodeConnectionPointId]);
+				}
 			}
 		}
 	}
