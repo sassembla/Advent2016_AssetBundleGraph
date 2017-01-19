@@ -53,16 +53,16 @@ namespace AssetBundleGraph {
     //
     //          var dict = Json.Deserialize(jsonString) as Dictionary<string,object>;
     //
-    //          Debug.Log("deserialized: " + dict.GetType());
-    //          Debug.Log("dict['array'][0]: " + ((List<object>) dict["array"])[0]);
-    //          Debug.Log("dict['string']: " + (string) dict["string"]);
-    //          Debug.Log("dict['float']: " + (double) dict["float"]); // floats come out as doubles
-    //          Debug.Log("dict['int']: " + (long) dict["int"]); // ints come out as longs
-    //          Debug.Log("dict['unicode']: " + (string) dict["unicode"]);
+    //          LogUtility.Logger.Log("deserialized: " + dict.GetType());
+    //          LogUtility.Logger.Log("dict['array'][0]: " + ((List<object>) dict["array"])[0]);
+    //          LogUtility.Logger.Log("dict['string']: " + (string) dict["string"]);
+    //          LogUtility.Logger.Log("dict['float']: " + (double) dict["float"]); // floats come out as doubles
+    //          LogUtility.Logger.Log("dict['int']: " + (long) dict["int"]); // ints come out as longs
+    //          LogUtility.Logger.Log("dict['unicode']: " + (string) dict["unicode"]);
     //
     //          var str = Json.Serialize(dict);
     //
-    //          Debug.Log("serialized: " + str);
+    //          LogUtility.Logger.Log("serialized: " + str);
     //      }
     //  }
 
@@ -544,40 +544,73 @@ namespace AssetBundleGraph {
             }
         }
 
+		private const string INDENT_STRING = "    ";
 		public static string Prettify (string sourceJson) {
-			var lines = sourceJson
-				.Replace("{", "{\n").Replace("}", "\n}")
-				.Replace("[", "[\n").Replace("]", "\n]")
-				.Replace(",", ",\n")
-				.Split('\n');
-
-			Func<string, int, string> indents = (string baseLine, int indentDepth) => {
-				var indentsStr = string.Empty;
-				for (var i = 0; i < indentDepth; i++) indentsStr += "\t";
-				return indentsStr + baseLine;
-			};
-
 			var indent = 0;
-			for (var i = 0; i < lines.Length; i++) {
-				var line = lines[i];
-
-				// reduce indent for "}"
-				if (line.Contains("}") || line.Contains("]")) {
-					indent--;
-				}
-
-				/*
-					adopt indent.
-				*/
-				lines[i] = indents(lines[i], indent);
-
-				// indent continued all line after "{" 
-				if (line.Contains("{") || line.Contains("[")) {
-					indent++;
-					continue;
+			var quoted = false;
+			var sb = new StringBuilder();
+			for (var i = 0; i < sourceJson.Length; i++)
+			{
+				var ch = sourceJson[i];
+				switch (ch)
+				{
+					case '{':
+					case '[':
+						sb.Append(ch);
+						if (!quoted)
+						{
+							sb.AppendLine();
+							++indent;
+							for (int j = 0; j < indent; j++)
+							{
+								sb.Append(INDENT_STRING);
+							}
+						}
+						break;
+					case '}':
+					case ']':
+						if (!quoted)
+						{
+							sb.AppendLine();
+							--indent;
+							for (int j = 0; j < indent; j++)
+							{
+								sb.Append(INDENT_STRING);
+							}
+						}
+						sb.Append(ch);
+						break;
+					case '"':
+						sb.Append(ch);
+						bool escaped = false;
+						var index = i;
+						while (index > 0 && sourceJson[--index] == '\\')
+							escaped = !escaped;
+						if (!escaped)
+							quoted = !quoted;
+						break;
+					case ',':
+						sb.Append(ch);
+						if (!quoted)
+						{
+							sb.AppendLine();
+							for (int j = 0; j < indent; j++)
+							{
+								sb.Append(INDENT_STRING);
+							}
+						}
+						break;
+					case ':':
+						sb.Append(ch);
+						if (!quoted)
+							sb.Append(" ");
+						break;
+					default:
+						sb.Append(ch);
+						break;
 				}
 			}
-			return string.Join("\n", lines);
+			return sb.ToString();
 		}
 	}
 }

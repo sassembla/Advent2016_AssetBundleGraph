@@ -48,14 +48,35 @@ namespace AssetBundleGraph {
 				});
 
 				using (disabledScope) {
+					var path = node.Data.LoaderLoadPath[currentEditingGroup];
 					EditorGUILayout.LabelField("Load Path:");
-					var newLoadPath = EditorGUILayout.TextField(
-						SystemDataUtility.GetProjectName() + AssetBundleGraphSettings.ASSETS_PATH,
-						node.Data.LoaderLoadPath[currentEditingGroup]
-					);
-					if (newLoadPath !=	node.Data.LoaderLoadPath[currentEditingGroup]) {
+
+					var newLoadPath = EditorGUILayout.TextField(AssetBundleGraphSettings.ASSETS_PATH, path);
+					if (newLoadPath != path) {
 						using(new RecordUndoScope("Load Path Changed", node, true)){
 							node.Data.LoaderLoadPath[currentEditingGroup] = newLoadPath;
+						}
+					}
+
+					var dirPath = Path.Combine(AssetBundleGraphSettings.ASSETS_PATH,newLoadPath);
+					bool dirExists = Directory.Exists(dirPath);
+
+					using (new EditorGUILayout.HorizontalScope()) {
+						using(new EditorGUI.DisabledScope(string.IsNullOrEmpty(newLoadPath)||!dirExists)) 
+						{
+							GUILayout.FlexibleSpace();
+							if(GUILayout.Button("Select in Project Window", GUILayout.Width(150))) {
+								var obj = AssetDatabase.LoadMainAssetAtPath(dirPath);
+								EditorGUIUtility.PingObject(obj);
+							}
+						}
+					}
+
+					if(!dirExists) {
+						EditorGUILayout.LabelField("Available Directories:");
+						string[] dirs = Directory.GetDirectories(Path.GetDirectoryName(dirPath));
+						foreach(string s in dirs) {
+							EditorGUILayout.LabelField(s);
 						}
 					}
 				}
@@ -79,12 +100,12 @@ namespace AssetBundleGraph {
 							removing = cond;
 						}
 						else {
-							var newContainsKeyword = cond.FilterKeyword;
+							var keyword = cond.FilterKeyword;
 
 							GUIStyle s = new GUIStyle((GUIStyle)"TextFieldDropDownText");
 
 							using (new EditorGUILayout.HorizontalScope()) {
-								newContainsKeyword = EditorGUILayout.TextField(cond.FilterKeyword, s, GUILayout.Width(120));
+								keyword = EditorGUILayout.TextField(cond.FilterKeyword, s, GUILayout.Width(120));
 								if (GUILayout.Button(cond.FilterKeytype , "Popup")) {
 									var ind = i;// need this because of closure locality bug in unity C#
 									NodeGUI.ShowFilterKeyTypeMenu(
@@ -92,18 +113,22 @@ namespace AssetBundleGraph {
 										(string selectedTypeStr) => {
 											using(new RecordUndoScope("Modify Filter Type", node, true)){
 												node.Data.FilterConditions[ind].FilterKeytype = selectedTypeStr;
+												node.Data.UpdateFilterEntry(node.Data.FilterConditions[ind]);
 											}
+											// event must raise to propagate change to connection associated with point
+											NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_LABELCHANGED, node, Vector2.zero, node.Data.GetConnectionPoint(cond)));
 										} 
 									);
 								}
 							}
 
-							if (newContainsKeyword != cond.FilterKeyword) {
+							if (keyword != cond.FilterKeyword) {
 								using(new RecordUndoScope("Modify Filter Keyword", node, true)){
-									cond.FilterKeyword = newContainsKeyword;
-									// event must raise to propagate change to connection associated with point
-									NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_LABELCHANGED, node, Vector2.zero, cond.ConnectionPoint));
+									cond.FilterKeyword = keyword;
+									node.Data.UpdateFilterEntry(cond);
 								}
+								// event must raise to propagate change to connection associated with point
+								NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_LABELCHANGED, node, Vector2.zero, node.Data.GetConnectionPoint(cond)));
 							}
 						}
 					}
@@ -127,7 +152,7 @@ namespace AssetBundleGraph {
 				if(removing != null) {
 					using(new RecordUndoScope("Remove Filter Condition", node, true)){
 						// event must raise to remove connection associated with point
-						NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_DELETED, node, Vector2.zero, removing.ConnectionPoint));
+						NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_DELETED, node, Vector2.zero, node.Data.GetConnectionPoint(removing)));
 						node.Data.RemoveFilterCondition(removing);
 					}
 				}
@@ -145,7 +170,7 @@ namespace AssetBundleGraph {
 				platform key is contained by Unity's importer inspector itself.
 			*/
 			using (new EditorGUILayout.VerticalScope(GUI.skin.box)) {
-				Type incomingType = FindIncomingAssetType(node.Data.InputPoints[0]);
+				Type incomingType = FindFirstIncomingAssetType(node.Data.InputPoints[0]);
 				IntegratedGUIImportSetting.ConfigStatus status = 
 					IntegratedGUIImportSetting.GetConfigStatus(node.Data);
 
@@ -163,6 +188,7 @@ namespace AssetBundleGraph {
 				case IntegratedGUIImportSetting.ConfigStatus.NoSampleFound:
 					// IntegratedGUIImportSetting.Setup() must run to grab another sample to configure.
 					EditorGUILayout.HelpBox("Press Refresh to configure.", MessageType.Info);
+					node.Data.NeedsRevisit = true;
 					break;
 				case IntegratedGUIImportSetting.ConfigStatus.GoodSampleFound:
 					if (GUILayout.Button("Configure Import Setting")) {
@@ -189,7 +215,7 @@ namespace AssetBundleGraph {
 
 			using (new EditorGUILayout.VerticalScope(GUI.skin.box)) {
 
-				Type incomingType = FindIncomingAssetType(node.Data.InputPoints[0]);
+				Type incomingType = FindFirstIncomingAssetType(node.Data.InputPoints[0]);
 
 				if(incomingType == null) {
 					// if there is no asset input to determine incomingType,
@@ -222,6 +248,14 @@ namespace AssetBundleGraph {
 										}
 									}  
 								);
+							}
+						}
+
+						MonoScript s = TypeUtility.LoadMonoScript(node.Data.ScriptClassName);
+
+						using(new EditorGUI.DisabledScope(s == null)) {
+							if(GUILayout.Button("Edit", GUILayout.Width(50))) {
+								AssetDatabase.OpenAsset(s, 0);
 							}
 						}
 					}
@@ -349,6 +383,20 @@ namespace AssetBundleGraph {
 								);
 							}
 						}
+
+						MonoScript s = TypeUtility.LoadMonoScript(node.Data.ScriptClassName);
+
+						using(new EditorGUI.DisabledScope(s == null)) {
+							if(GUILayout.Button("Edit", GUILayout.Width(50))) {
+								AssetDatabase.OpenAsset(s, 0);
+							}
+						}
+					}
+					ReplacePrefabOptions opt = (ReplacePrefabOptions)EditorGUILayout.EnumPopup("Prefab Replace Option", node.Data.ReplacePrefabOptions, GUILayout.MinWidth(150f));
+					if(node.Data.ReplacePrefabOptions != opt) {
+						using(new RecordUndoScope("Change Prefab Replace Option", node, true)) {
+							node.Data.ReplacePrefabOptions = opt;
+						}
 					}
 				} else {
 					if(!string.IsNullOrEmpty(node.Data.ScriptClassName)) {
@@ -425,10 +473,9 @@ namespace AssetBundleGraph {
 					using(new RecordUndoScope("Change Bundle Config", node, true)){
 						node.Data.BundleConfigUseGroupAsVariants = newUseGroupAsVariantValue;
 
-						// TODO: preserve variants
 						List<Variant> rv = new List<Variant>(node.Data.Variants);
 						foreach(var v in rv) {
-							NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_DELETED, node, Vector2.zero, v.ConnectionPoint));
+							NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_DELETED, node, Vector2.zero, node.Data.GetConnectionPoint(v)));
 							node.Data.RemoveVariant(v);
 						}
 					}
@@ -460,6 +507,7 @@ namespace AssetBundleGraph {
 								if (variantName != v.Name) {
 									using(new RecordUndoScope("Change Variant Name", node, true)){
 										v.Name = variantName;
+										node.Data.UpdateVariant(v);
 									}
 								}
 							}
@@ -467,13 +515,16 @@ namespace AssetBundleGraph {
 					}
 					if (GUILayout.Button("+")) {
 						using(new RecordUndoScope("Add Variant", node, true)){
+							if(node.Data.Variants.Count == 0) {
+								NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_DELETE_ALL_CONNECTIONS_TO_POINT, node, Vector2.zero, node.Data.InputPoints[0]));
+							}
 							node.Data.AddVariant(AssetBundleGraphSettings.BUNDLECONFIG_VARIANTNAME_DEFAULT);
 						}
 					}
 					if(removing != null) {
 						using(new RecordUndoScope("Remove Variant", node, true)){
 							// event must raise to remove connection associated with point
-							NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_DELETED, node, Vector2.zero, removing.ConnectionPoint));
+							NodeGUIUtility.NodeEventHandler(new NodeEvent(NodeEvent.EventType.EVENT_CONNECTIONPOINT_DELETED, node, Vector2.zero, node.Data.GetConnectionPoint(removing)));
 							node.Data.RemoveVariant(removing);
 						}
 					}
@@ -611,15 +662,12 @@ namespace AssetBundleGraph {
 						newExportPath,
 						exporterNodePath,
 						() => {
-							// TODO Make text field bold
 						},
 						() => {
 							using (new EditorGUILayout.HorizontalScope()) {
 								EditorGUILayout.LabelField(exporterNodePath + " does not exist.");
 								if(GUILayout.Button("Create directory")) {
-									using(new SaveScope(node)) {
-										Directory.CreateDirectory(exporterNodePath);
-									}
+									Directory.CreateDirectory(exporterNodePath);
 								}
 							}
 							EditorGUILayout.Space();
@@ -688,7 +736,7 @@ namespace AssetBundleGraph {
 				DoInspectorExporterGUI(node);
 				break;
 			default: 
-				Debug.LogError(node.Name + " is defined as unknown kind of node. value:" + node.Kind);
+				LogUtility.Logger.LogError(LogUtility.kTag, node.Name + " is defined as unknown kind of node. value:" + node.Kind);
 				break;
 			}
 
@@ -722,12 +770,23 @@ namespace AssetBundleGraph {
 			menu.ShowAsContext();
 		}
 
-		private Type FindIncomingAssetType(ConnectionPointData inputPoint) {
-			var assetGroups = AssetBundleGraphEditorWindow.GetIncomingAssetGroups(inputPoint);
-			if(assetGroups == null) {
+		private Type FindFirstIncomingAssetType(ConnectionPointData inputPoint) {
+			var assetGroupEnum = AssetBundleGraphEditorWindow.EnumurateIncomingAssetGroups(inputPoint);
+			if(assetGroupEnum == null) {
 				return null;
 			}
-			return TypeUtility.FindIncomingAssetType(assetGroups.SelectMany(v => v.Value).ToList());
+
+			if(assetGroupEnum.Any()) {
+				var ag = assetGroupEnum.First();
+				if(ag.Values.Any()) {
+					var assets = ag.Values.First();
+					if(assets.Count > 0) {
+						return assets[0].filterType;
+					}
+				}
+			}
+
+			return null;
 		}
 
 		private void UpdateNodeName (NodeGUI node) {
@@ -739,7 +798,6 @@ namespace AssetBundleGraph {
 					.Select(group => group.Key);
 				if (overlapping.Any() && overlapping.Contains(newName)) {
 					EditorGUILayout.HelpBox("There are node with the same name. You may want to rename to avoid confusion:" + newName, MessageType.Info);
-					AssetBundleGraphEditorWindow.AddNodeException(new NodeException("Node name " + newName + " already exist.", node.Id ));
 				}
 			}
 

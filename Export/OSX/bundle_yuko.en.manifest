@@ -1,0 +1,16 @@
+ManifestFileVersion: 0
+CRC: 467270421
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 89c2c840c521ae8a16ae382860d506b4
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c1642440719609290a7e09a50a7286f4
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- Assets/Game/Images/PNG/platform_en/chara_yuko/portrait_yuko_01.png
+Dependencies: []

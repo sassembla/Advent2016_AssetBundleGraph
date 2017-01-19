@@ -1,0 +1,22 @@
+ManifestFileVersion: 0
+CRC: 1281728320
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: bundle_kohaku.en
+      Dependencies: {}
+    Info_1:
+      Name: bundle_kohaku.jp
+      Dependencies: {}
+    Info_2:
+      Name: bundle_misaki.en
+      Dependencies: {}
+    Info_3:
+      Name: bundle_misaki.jp
+      Dependencies: {}
+    Info_4:
+      Name: bundle_yuko.en
+      Dependencies: {}
+    Info_5:
+      Name: bundle_yuko.jp
+      Dependencies: {}

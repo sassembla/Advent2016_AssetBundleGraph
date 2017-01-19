@@ -1,0 +1,16 @@
+ManifestFileVersion: 0
+CRC: 1018601953
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 919b56e1a8c3ca6e7df4294172a50134
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c1642440719609290a7e09a50a7286f4
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- Assets/Game/Images/PNG/platform_jp/chara_misaki/portrait_misaki_01.png
+Dependencies: []

@@ -1,0 +1,16 @@
+ManifestFileVersion: 0
+CRC: 3049717874
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: c2dbd685be4238e9abeb8a1b8343263d
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c1642440719609290a7e09a50a7286f4
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- Assets/Game/Images/PNG/platform_jp/chara_kohaku/portrait_kohaku_01.png
+Dependencies: []

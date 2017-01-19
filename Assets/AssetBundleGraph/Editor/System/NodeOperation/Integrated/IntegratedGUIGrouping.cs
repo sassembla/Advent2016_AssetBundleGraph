@@ -1,5 +1,6 @@
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -11,33 +12,29 @@ namespace AssetBundleGraph
 
 		public void Setup (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
-			GroupingOutput(target, node, inputPoint, connectionToOutput, inputGroupAssets, Output);
+			GroupingOutput(target, node, incoming, connectionsToOutput, Output);
 		}
 
 		public void Run (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			List<string> alreadyCached, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output,
+			Action<NodeData, string, float> progressFunc) 
 		{
-			GroupingOutput(target, node, inputPoint, connectionToOutput, inputGroupAssets, Output);
+			//Operation is completed furing Setup() phase, so do nothing in Run.
 		}
 
 
 		private void GroupingOutput (BuildTarget target, 
 			NodeData node, 
-			ConnectionPointData inputPoint,
-			ConnectionData connectionToOutput, 
-			Dictionary<string, List<Asset>> inputGroupAssets, 
-			Action<ConnectionData, Dictionary<string, List<Asset>>, List<string>> Output) 
+			IEnumerable<PerformGraph.AssetGroups> incoming, 
+			IEnumerable<ConnectionData> connectionsToOutput, 
+			PerformGraph.Output Output) 
 		{
 
 			ValidateGroupingKeyword(
@@ -50,33 +47,38 @@ namespace AssetBundleGraph
 				}
 			);
 
-			var outputDict = new Dictionary<string, List<Asset>>();
-
-			var mergedGroupedSources = new List<Asset>();
-
-			foreach (var groupKey in inputGroupAssets.Keys) {
-				mergedGroupedSources.AddRange(inputGroupAssets[groupKey]);
+			if(incoming == null || connectionsToOutput == null || Output == null) {
+				return;
 			}
 
+			var outputDict = new Dictionary<string, List<AssetReference>>();
 			var groupingKeyword = node.GroupingKeywords[target];
 			var split = groupingKeyword.Split(AssetBundleGraphSettings.KEYWORD_WILDCARD);
 			var groupingKeywordPrefix  = split[0];
 			var groupingKeywordPostfix = split[1];
+			var regex = new Regex(groupingKeywordPrefix + "(.*?)" + groupingKeywordPostfix);
 
-			foreach (var source in mergedGroupedSources) {
-				var targetPath = source.GetAbsolutePathOrImportedPath();
+			foreach(var ag in incoming) {
+				foreach (var assets in ag.assetGroups.Values) {
+					foreach(var a in assets) {
+						var targetPath = a.path;
 
-				var regex = new Regex(groupingKeywordPrefix + "(.*?)" + groupingKeywordPostfix);
-				var match = regex.Match(targetPath);
+						var match = regex.Match(targetPath);
 
-				if (match.Success) {
-					var newGroupingKey = match.Groups[1].Value;
-					if (!outputDict.ContainsKey(newGroupingKey)) outputDict[newGroupingKey] = new List<Asset>();
-					outputDict[newGroupingKey].Add(source);
+						if (match.Success) {
+							var newGroupingKey = match.Groups[1].Value;
+							if (!outputDict.ContainsKey(newGroupingKey)) {
+								outputDict[newGroupingKey] = new List<AssetReference>();
+							}
+							outputDict[newGroupingKey].Add(a);
+						}
+					}
 				}
 			}
-			
-			Output(connectionToOutput, outputDict, null);
+
+			var dst = (connectionsToOutput == null || !connectionsToOutput.Any())? 
+				null : connectionsToOutput.First();
+			Output(dst, outputDict);
 		}
 
 		public static void ValidateGroupingKeyword (string currentGroupingKeyword, Action NullOrEmpty, Action ShouldContainWildCardKey) {
